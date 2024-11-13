@@ -1,6 +1,5 @@
 ﻿namespace Game_Curs_Prog
 {
-   
     public class Hero : Entity
     {
         public int JumpHeight { get; set; }
@@ -8,51 +7,39 @@
         public bool CanJump { get; set; } = false;
         private int jumpStartY;
         private const int MaxJumpHeight = 5;
-        private const int GroundTimeThreshold = 50; // Время в миллисекундах, которое нужно провести на земле
-        private DateTime? firstGroundTime; // Время первого сигнала приземления
+        private const int GroundTimeThreshold = 50;
+        private DateTime? firstGroundTime;
+        private double jumpVelocity;
+        private const double initialJumpVelocity = 0.3;
+        private const double gravity = 0.1;
+        private double velocityX;
+        private const double friction = 0.9;
+        private const double acceleration = 1.0; // Увеличено значение для быстрого разгона
+        private const double maxSpeed = 3.0; // Максимальная скорость
 
         public Hero(int x, int y, int width, int height, char symbol) : base(x, y, width, height, symbol)
         {
-            JumpHeight = MaxJumpHeight; // Начальная высота прыжка
-            IsJumping = false; // Состояние прыжка
+            JumpHeight = MaxJumpHeight;
+            IsJumping = false;
+            jumpVelocity = initialJumpVelocity;
+            velocityX = 0;
         }
 
         public void Jump(List<Entity> entities)
         {
             if (!IsJumping && CanJump)
             {
-                jumpStartY = Y; // Запоминаем начальную позицию прыжка
-                IsJumping = true; // Начало прыжка
-                CanJump = false; // Отключение возможности прыжка
-
-                // Рассчитываем высоту прыжка с учетом объектов над головой
-                JumpHeight = MaxJumpHeight;
-                for (int i = 1; i <= MaxJumpHeight; i++)
-                {
-                    if (CheckCollisionAbove(i, entities))
-                    {
-                        JumpHeight = i - 1;
-                        break;
-                    }
-                }
+                jumpStartY = Y;
+                IsJumping = true;
+                CanJump = false;
+                jumpVelocity = initialJumpVelocity * Program.game_speed;
             }
-        }
-
-        private bool CheckCollisionAbove(int distance, List<Entity> entities)
-        {
-            foreach (var entity in entities)
-            {
-                if (entity != this && IsCollidingInDirection(entity, 0, -distance))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         public void Update(List<Entity> entities)
         {
             UpdateJump(entities);
+            UpdateMovement(entities);
             CheckCollisions(entities);
             UpdateGroundTime(entities);
         }
@@ -61,47 +48,57 @@
         {
             if (IsJumping)
             {
-                // Игнорируем коллизии при движении вверх во время прыжка
-                if (Y > jumpStartY - JumpHeight)
+                double newY = Y - jumpVelocity;
+                jumpVelocity -= gravity;
+
+                bool isColliding = entities.Any(e => e != this && IsCollidingInDirection(e, 0, (int)newY - Y));
+                if (isColliding || Y <= jumpStartY - MaxJumpHeight)
                 {
-                    Y -= 1; // Поднимаем героя на высоту прыжка
+                    IsJumping = false;
+                    jumpVelocity = 0;
                 }
                 else
                 {
-                    IsJumping = false; // Завершение прыжка
+                    Y = (int)newY;
                 }
 
-                // Ограничение по верхней границе
-                if (Y < 1)
+                if (jumpVelocity <= 0)
                 {
-                    Y = 1;
                     IsJumping = false;
+                    jumpVelocity = 0;
                 }
+            }
+        }
 
-                // Обновление позиции по горизонтали во время прыжка
-                if (Controls.IsKeyPressed(ConsoleKey.A))
-                {
-                    if (!entities.Any(e => IsCollidingInDirection(e, -1, 0)))
-                    {
-                        X -= 1;
-                    }
-                }
-                if (Controls.IsKeyPressed(ConsoleKey.D))
-                {
-                    if (!entities.Any(e => IsCollidingInDirection(e, 1, 0)))
-                    {
-                        X += 1;
-                    }
-                }
+        private void UpdateMovement(List<Entity> entities)
+        {
+            if (Controls.IsKeyPressed(ConsoleKey.A))
+            {
+                velocityX -= acceleration * Program.game_speed; // Ускорение влево
+            }
+            if (Controls.IsKeyPressed(ConsoleKey.D))
+            {
+                velocityX += acceleration * Program.game_speed; // Ускорение вправо
+            }
+
+            if (velocityX > maxSpeed) velocityX = maxSpeed;
+            if (velocityX < -maxSpeed) velocityX = -maxSpeed;
+
+            velocityX *= friction; // Применение трения для уменьшения инерции
+
+            int newX = X + (int)velocityX;
+            if (!entities.Any(e => e != this && IsCollidingInDirection(e, (int)velocityX, 0)))
+            {
+                X = newX;
             }
         }
 
         public void Land()
         {
-            IsJumping = false; // Завершение прыжка
+            IsJumping = false;
             if (firstGroundTime == null)
             {
-                firstGroundTime = DateTime.Now; // Устанавливаем время первого сигнала приземления
+                firstGroundTime = DateTime.Now;
             }
         }
 
@@ -111,14 +108,14 @@
             {
                 if (firstGroundTime != null && (DateTime.Now - firstGroundTime.Value).TotalMilliseconds >= GroundTimeThreshold)
                 {
-                    CanJump = true; // Разрешаем прыжок после того, как герой пробыл на земле 500 миллисекунд
-                    firstGroundTime = null; // Сбрасываем время первого сигнала приземления
+                    CanJump = true;
+                    firstGroundTime = null;
                 }
             }
             else
             {
-                firstGroundTime = null; // Сбрасываем время первого сигнала, если герой не на земле
-                CanJump = false; // Запрещаем прыжок, если герой не на земле
+                firstGroundTime = null;
+                CanJump = false;
             }
         }
 
@@ -131,10 +128,8 @@
                     Y = entity.Y - Height;
                     Land();
                 }
-                // Проверка коллизий слева и справа
                 if (entity != this && (IsCollidingLeft(entity) || IsCollidingRight(entity)))
                 {
-                    // Предотвращаем прохождение через объект
                     if (IsCollidingLeft(entity))
                     {
                         X = entity.X + entity.Width;
@@ -147,36 +142,9 @@
             }
         }
 
-
         private bool IsOnGround(List<Entity> entities)
         {
             return entities.Any(e => e != this && IsCollidingBottom(e));
         }
-
-
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

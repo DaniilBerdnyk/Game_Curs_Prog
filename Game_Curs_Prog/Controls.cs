@@ -16,6 +16,7 @@ namespace Game_Curs_Prog
             { ConsoleKey.S, 0x53 },
             { ConsoleKey.A, 0x41 },
             { ConsoleKey.D, 0x44 },
+            { ConsoleKey.R, 0x52 }, // Добавляем клавишу R
             { ConsoleKey.Escape, 0x1B }
         };
 
@@ -25,6 +26,7 @@ namespace Game_Curs_Prog
             { ConsoleKey.S, false },
             { ConsoleKey.A, false },
             { ConsoleKey.D, false },
+            { ConsoleKey.R, false }, // Добавляем клавишу R
             { ConsoleKey.Escape, false }
         };
 
@@ -69,6 +71,7 @@ namespace Game_Curs_Prog
         }
     }
 }
+
 
 
 

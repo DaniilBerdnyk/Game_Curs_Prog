@@ -39,6 +39,11 @@ namespace Game_Curs_Prog
                 {
                     MoveEntity(hero, 1, 0, entities);
                 }
+                if (Controls.IsKeyPressed(ConsoleKey.R))
+                {
+                    Program.RespawnPlayer(); // вызов метода RespawnPlayer из Program
+                    Controls.ResetKey(ConsoleKey.R);
+                }
             }
         }
 
@@ -58,6 +63,7 @@ namespace Game_Curs_Prog
         }
     }
 }
+
 
 
 

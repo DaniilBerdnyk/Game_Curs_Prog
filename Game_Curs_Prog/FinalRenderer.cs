@@ -8,23 +8,24 @@ namespace Game_Curs_Prog
     {
         public static void Draw(int consoleWidth, int consoleHeight, List<Entity> entities, Background background, int cameraX, int cameraY)
         {
-            // Инициализация буфера символами фона
-            char[,] backgroundBuffer = new char[consoleWidth, consoleHeight];
-            char[,] objectBuffer = new char[consoleWidth, consoleHeight];
+            // Инициализация буфера символами фона и объектов
+            char[,] frameBuffer = new char[consoleWidth, consoleHeight];
             ConsoleColor[,] colorBuffer = new ConsoleColor[consoleWidth, consoleHeight];
 
-            // Генерация полного фона
-            char[,] fullBackground = background.GenerateFullBackground(1000, 40);
+            // Генерация фона с параллаксом
+            char[,] parallaxBackground = background.GenerateParallaxBackground(1000, 100, cameraX, cameraY, 0.3);
+
+            // Заполнение буфера фона
             for (int y = 0; y < consoleHeight; y++)
             {
                 for (int x = 0; x < consoleWidth; x++)
                 {
-                    backgroundBuffer[x, y] = fullBackground[cameraX + x, cameraY + y];
-                    colorBuffer[x, y] = ConsoleColor.Gray;
+                    frameBuffer[x, y] = parallaxBackground[x, y];
+                    colorBuffer[x, y] = ConsoleColor.Gray; // Используем серый цвет для фона
                 }
             }
 
-            // Отрисовка объектов поверх фона
+            // Заполнение буфера объектов
             foreach (var entity in entities)
             {
                 for (int y = 0; y < entity.Height; y++)
@@ -36,38 +37,75 @@ namespace Game_Curs_Prog
 
                         if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
                         {
-                            objectBuffer[drawX, drawY] = entity.Symbol;
-                            colorBuffer[drawX, drawY] = ConsoleColor.White;
+                            frameBuffer[drawX, drawY] = entity.Symbol;
+                            colorBuffer[drawX, drawY] = ConsoleColor.White; // Устанавливаем белый цвет для объектов
                         }
                     }
                 }
             }
 
-            // Отображение буфера на консоли с использованием встроенных методов C#
-            Console.Clear();
-            for (int y = 0; y < consoleHeight; y++)
+            RenderFinalFrame(frameBuffer, colorBuffer, consoleWidth, consoleHeight);
+        }
+
+        public static void RenderFinalFrame(char[,] frame, ConsoleColor[,] colorFrame, int width, int height)
+        {
+            var sb = new StringBuilder();
+            Console.SetCursorPosition(0, 0);
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < consoleWidth; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    Console.SetCursorPosition(x, y);
-                    if (objectBuffer[x, y] == '\0')
-                    {
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.Write(backgroundBuffer[x, y]);
-                    }
-                    else
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.Write(objectBuffer[x, y]);
-                    }
+                    Console.ForegroundColor = colorFrame[x, y];
+                    sb.Append(frame[x, y]);
+                }
+                if (y < height - 1) // Удаление лишних линий
+                {
+                    sb.AppendLine();
                 }
             }
+            Console.SetCursorPosition(0, 0);
+            Console.Write(sb.ToString());
             Console.ResetColor();
+        }
+
+        public static void SetBackgroundColor(ConsoleColor color)
+        {
+            Console.BackgroundColor = color;
+        }
+
+        public static void SetForegroundColor(ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+        }
+
+        public static void ClearScreen()
+        {
+            Console.Clear();
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
