@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Collections.Generic;
- 
+
 class Program
 {
     static TcpClient client;
@@ -15,26 +15,20 @@ class Program
     static List<Hero> teammates = new List<Hero>(); // Список напарников
     static Enemy enemy = new Enemy(18, 3, 3, 4, 'E');
     static VisualEntity visual = new VisualEntity(18, 3, 3, 4, 'V');
-  //  static PhysicsEntity Box = new PhysicsEntity(40, 3, 3, 4, '0');
     static StaticEntity Platform = new StaticEntity(10, 15, 20, 10, '#');
     static StaticEntity topWall = new StaticEntity(1, 0, 1000, 1, '▄');
     static StaticEntity leftWall = new StaticEntity(0, 0, 1, 40, ' ');
     static StaticEntity rightWall = new StaticEntity(999, 0, 1, 40, ' ');
     static StaticEntity ground = new StaticEntity(0, 19, 1000, 1, '▀');
 
-
-
-    //
-    static List<Entity> entities_2 = new List<Entity> { };
-
-
-    static List<Entity> entities = new List<Entity> { visual,  player, enemy, Platform, topWall, leftWall, rightWall, ground };
+    static List<Entity> entities = new List<Entity> { visual, player, enemy, Platform, topWall, leftWall, rightWall, ground };
     static Background background;
 
-    static int gravity = 1;
-    static Thread gravityThread;
+    static double gravity = 0.05; // Уменьшенное значение гравитации для более плавного прыжка
+    static Timer gravityTimer;
+    static int gravityStepTime = 100; // Время на смещение на один символ вниз (в миллисекундах)
 
-    public const int game_speed = 3;  //default 5
+    public const int game_speed = 5;  //default 5
     public const int framesPerSecond = 120;
     static int frameCounter = 0;
 
@@ -75,14 +69,16 @@ class Program
         Thread gameThread = new Thread(() => GameLoop(consoleWidth, consoleHeight, framesPerSecond, parallaxFactor));
         gameThread.Start();
 
-        gravityThread = new Thread(() => GravityLoop(consoleHeight));
-        gravityThread.Start();
+        // Запуск гравитационного таймера
+        StartGravityLoop(consoleHeight);
 
         Controls.StartKeyChecking(framesPerSecond);
 
         gameThread.Join();
-        gravityThread.Join();
+        gravityTimer.Dispose(); // Остановка таймера при завершении игры
     }
+
+
     public static void RespawnPlayer()
     {
         player.X = 2;
@@ -92,90 +88,91 @@ class Program
         FinalRenderer.Draw(80, 20, entities, teammates, background, cameraX, cameraY, 0.5);
     }
 
+static void StartGravityLoop(int consoleHeight)
+{
+    gravityTimer = new Timer(ApplyGravityToAllEntities, consoleHeight, 0, (int)(gravity * 1000));
+}
 
+static void ApplyGravityToAllEntities(object state)
+{
+    int consoleHeight = (int)state;
 
-    static void GravityLoop(int consoleHeight)
+    // Применение гравитации ко всем объектам типа Hero
+    foreach (var entity in entities.OfType<Hero>())
     {
-        while (running)
-        {
-            // Применение гравитации ко всем объектам типа Hero
-            foreach (var entity in entities.OfType<Hero>())
-            {
-                ApplyGravity(entity, consoleHeight);
-            }
-
-            // Применение гравитации ко всем объектам типа Enemy
-            foreach (var entity in entities.OfType<Enemy>())
-            {
-                ApplyGravity(entity, consoleHeight);
-            }
-
-            // Применение гравитации ко всем объектам типа PhysicsEntity
-            foreach (var entity in entities.OfType<PhysicsEntity>())
-            {
-                ApplyGravity(entity, consoleHeight);
-            }
-
-            // Применение гравитации ко всем объектам типа Teammate
-            foreach (var teammate in teammates)
-            {
-                ApplyGravity(teammate, consoleHeight);
-            }
-
-            Thread.Sleep(1000 / framesPerSecond);
-        }
+        ApplyGravity(entity, consoleHeight);
     }
 
-
-
-    static void ApplyGravity(Entity entity, int consoleHeight)
+    // Применение гравитации ко всем объектам типа Enemy
+    foreach (var entity in entities.OfType<Enemy>())
     {
-        if (entity is Hero hero && hero.IsJumping)
-            return;
+        ApplyGravity(entity, consoleHeight);
+    }
 
-        int newY = entity.Y + gravity;
+    // Применение гравитации ко всем объектам типа PhysicsEntity
+    foreach (var entity in entities.OfType<PhysicsEntity>())
+    {
+        ApplyGravity(entity, consoleHeight);
+    }
 
-        bool isOnGround = entities.Any(e => e != entity && entity.IsCollidingBottom(e)) ||
-                          entities.OfType<StaticEntity>().Any(t => t != entity && entity.IsCollidingBottom(t));
+    // Применение гравитации ко всем объектам типа Teammate
+    foreach (var teammate in teammates)
+    {
+        ApplyGravity(teammate, consoleHeight);
+    }
+}
 
-        if (isOnGround)
+static void ApplyGravity(Entity entity, int consoleHeight)
+{
+    if (entity is Hero hero && hero.IsJumping)
+        return;
+
+    int newY = entity.Y + 1; // Сдвиг вниз на 1 символ
+
+    bool isOnGround = entities.Any(e => e != entity && entity.IsCollidingBottom(e)) ||
+                      entities.OfType<StaticEntity>().Any(t => t != entity && entity.IsCollidingBottom(t));
+
+    if (isOnGround)
+    {
+        foreach (var e in entities)
         {
-            foreach (var e in entities)
+            if (e != entity && entity.IsCollidingBottom(e))
             {
-                if (e != entity && entity.IsCollidingBottom(e))
+                entity.Y = e.Y - entity.Height;
+                if (entity is Hero h)
                 {
-                    entity.Y = e.Y - entity.Height;
-                    if (entity is Hero h)
-                    {
-                        h.Land();
-                    }
-                    break;
+                    h.Land();
                 }
-            }
-            foreach (var t in entities.OfType<StaticEntity>())
-            {
-                if (t != entity && entity.IsCollidingBottom(t))
-                {
-                    entity.Y = t.Y - entity.Height;
-                    if (entity is Hero h)
-                    {
-                        h.Land();
-                    }
-                    break;
-                }
+                break;
             }
         }
-        else
+        foreach (var t in entities.OfType<StaticEntity>())
         {
-            entity.Y = newY;
-        }
-
-        if (entity.Y >= consoleHeight - entity.Height)
-        {
-            entity.Y = 0;
+            if (t != entity && entity.IsCollidingBottom(t))
+            {
+                entity.Y = t.Y - entity.Height;
+                if (entity is Hero h)
+                {
+                    h.Land();
+                }
+                break;
+            }
         }
     }
-    enum CameraMode
+    else
+    {
+        entity.Y = newY;
+    }
+
+    if (entity.Y >= consoleHeight - entity.Height)
+    {
+        entity.Y = 0;
+    }
+}
+
+
+
+enum CameraMode
     {
         Basic,
         Advanced,
@@ -415,6 +412,7 @@ class Program
             Thread.Sleep(1000 / framesPerSecond);
         }
     }
+
 
 }
 
