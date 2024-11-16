@@ -46,7 +46,7 @@
                    Y + Height > other.Y;
         }
 
-        public bool IsCollidingInDirection(Entity other, int directionX, int directionY)
+        public virtual bool IsCollidingInDirection(Entity other, int directionX, int directionY)
         {
             int projectedX = X + directionX;
             int projectedY = Y + directionY;

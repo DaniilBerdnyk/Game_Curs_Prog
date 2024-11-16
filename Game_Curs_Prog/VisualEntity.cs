@@ -6,23 +6,34 @@
 
         public override bool IsCollidingRight(Entity other)
         {
-            return base.IsCollidingRight(other);
+            // Проницаемый объект не сталкивается с другими объектами
+            return false;
         }
 
         public override bool IsCollidingLeft(Entity other)
         {
-            return base.IsCollidingLeft(other);
+            // Проницаемый объект не сталкивается с другими объектами
+            return false;
         }
 
         public override bool IsCollidingBottom(Entity other)
         {
-            return base.IsCollidingBottom(other);
+            // Проницаемый объект не сталкивается с другими объектами
+            return false;
         }
 
         public override bool IsColliding(Entity other)
         {
-            return base.IsColliding(other);
+            // Проницаемый объект не сталкивается с другими объектами
+            return false;
+        }
+
+        public override bool IsCollidingInDirection(Entity other, int directionX, int directionY)
+        {
+            // Проницаемый объект не сталкивается с другими объектами
+            return false;
         }
     }
 }
+
 

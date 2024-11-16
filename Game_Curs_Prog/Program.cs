@@ -16,11 +16,17 @@ class Program
     static Enemy enemy = new Enemy(18, 3, 3, 4, 'E');
     static VisualEntity visual = new VisualEntity(18, 3, 3, 4, 'V');
   //  static PhysicsEntity Box = new PhysicsEntity(40, 3, 3, 4, '0');
-    static StaticEntity Platform = new StaticEntity(10, 15, 20, 1, '#');
+    static StaticEntity Platform = new StaticEntity(10, 15, 20, 10, '#');
     static StaticEntity topWall = new StaticEntity(1, 0, 1000, 1, '▄');
     static StaticEntity leftWall = new StaticEntity(0, 0, 1, 40, ' ');
     static StaticEntity rightWall = new StaticEntity(999, 0, 1, 40, ' ');
     static StaticEntity ground = new StaticEntity(0, 19, 1000, 1, '▀');
+
+
+
+    //
+    static List<Entity> entities_2 = new List<Entity> { };
+
 
     static List<Entity> entities = new List<Entity> { visual,  player, enemy, Platform, topWall, leftWall, rightWall, ground };
     static Background background;
