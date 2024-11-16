@@ -6,16 +6,20 @@
         public bool IsJumping { get; set; }
         public bool CanJump { get; set; } = false;
         private int jumpStartY;
-        private const int MaxJumpHeight = 5;
-        private const int GroundTimeThreshold = 50;
+        private const int MaxJumpHeight = 7;
+        private const int GroundTimeThreshold = 30;
         private DateTime? firstGroundTime;
-        private double jumpVelocity;
-        private const double initialJumpVelocity = 0.3;
-        private const double gravity = 0.1;
-        private double velocityX;
-        private const double friction = 0.9;
-        private const double acceleration = 1.0; // Увеличено значение для быстрого разгона
-        private const double maxSpeed = 3.0; // Максимальная скорость
+        public double jumpVelocity; // Публичное поле
+        private const double initialJumpVelocity = 0.2;
+        private const double gravity = 0.01;
+        private const double acceleration = 0.1; // Ускорение
+        public const double speed = 0.15; // Время шага
+        public double velocityX; // Публичное поле
+        private double slideSpeed; // Скорость скольжения
+        private const double friction = 0.03; // Трение
+        public DateTime lastMoveTime { get; private set; } // Время последнего движения
+        public DateTime lastJumpMoveTime { get; private set; } // Время последнего движения в прыжке
+        public string lastMoveDirection { get; private set; } // Направление последнего движения
 
         public Hero(int x, int y, int width, int height, char symbol) : base(x, y, width, height, symbol)
         {
@@ -23,6 +27,10 @@
             IsJumping = false;
             jumpVelocity = initialJumpVelocity;
             velocityX = 0;
+            slideSpeed = 0;
+            lastMoveTime = DateTime.Now;
+            lastJumpMoveTime = DateTime.Now;
+            lastMoveDirection = "right";
         }
 
         public void Jump(List<Entity> entities)
@@ -67,29 +75,65 @@
                     IsJumping = false;
                     jumpVelocity = 0;
                 }
+
+                // Диагональный прыжок при нажатии клавиши направления
+                DateTime currentTime = DateTime.Now;
+                double timeSinceLastJumpMove = (currentTime - lastJumpMoveTime).TotalMilliseconds;
+                double jumpMoveSpeed = speed * 0.5; // Уменьшение времени ввода при прыжке
+
+                if (timeSinceLastJumpMove >= jumpMoveSpeed * 100) // Преобразуем скорость в миллисекунды
+                {
+                    if (Controls.IsKeyPressed(ConsoleKey.A))
+                    {
+                        int newX = X - 1; // Движение влево на 1 символ
+                        if (!entities.Any(e => e != this && IsCollidingInDirection(e, -1, 0)))
+                        {
+                            X = newX;
+                        }
+                        lastJumpMoveTime = currentTime;
+                        lastMoveDirection = "left";
+                    }
+                    else if (Controls.IsKeyPressed(ConsoleKey.D))
+                    {
+                        int newX = X + 1; // Движение вправо на 1 символ
+                        if (!entities.Any(e => e != this && IsCollidingInDirection(e, 1, 0)))
+                        {
+                            X = newX;
+                        }
+                        lastJumpMoveTime = currentTime;
+                        lastMoveDirection = "right";
+                    }
+                }
             }
         }
 
         private void UpdateMovement(List<Entity> entities)
         {
-            if (Controls.IsKeyPressed(ConsoleKey.A))
-            {
-                velocityX -= acceleration * Program.game_speed; // Ускорение влево
-            }
-            if (Controls.IsKeyPressed(ConsoleKey.D))
-            {
-                velocityX += acceleration * Program.game_speed; // Ускорение вправо
-            }
+            DateTime currentTime = DateTime.Now;
+            double timeSinceLastMove = (currentTime - lastMoveTime).TotalMilliseconds;
 
-            if (velocityX > maxSpeed) velocityX = maxSpeed;
-            if (velocityX < -maxSpeed) velocityX = -maxSpeed;
-
-            velocityX *= friction; // Применение трения для уменьшения инерции
-
-            int newX = X + (int)velocityX;
-            if (!entities.Any(e => e != this && IsCollidingInDirection(e, (int)velocityX, 0)))
+            if (timeSinceLastMove >= speed * 1000) // Преобразуем скорость в миллисекунды
             {
-                X = newX;
+                if (Controls.IsKeyPressed(ConsoleKey.A))
+                {
+                    int newX = X - 1; // Движение влево на 1 символ
+                    if (!entities.Any(e => e != this && IsCollidingInDirection(e, -1, 0)))
+                    {
+                        X = newX;
+                    }
+                    lastMoveTime = currentTime;
+                    lastMoveDirection = "left";
+                }
+                else if (Controls.IsKeyPressed(ConsoleKey.D))
+                {
+                    int newX = X + 1; // Движение вправо на 1 символ
+                    if (!entities.Any(e => e != this && IsCollidingInDirection(e, 1, 0)))
+                    {
+                        X = newX;
+                    }
+                    lastMoveTime = currentTime;
+                    lastMoveDirection = "right";
+                }
             }
         }
 
@@ -146,5 +190,19 @@
         {
             return entities.Any(e => e != this && IsCollidingBottom(e));
         }
+
+        private bool IsCollidingInDirection(Entity entity, int directionX, int directionY)
+        {
+            int projectedX = X + directionX;
+            int projectedY = Y + directionY;
+
+            return projectedX < entity.X + entity.Width &&
+                   projectedX + Width > entity.X &&
+                   projectedY < entity.Y + entity.Height &&
+                   projectedY + Height > entity.Y;
+        }
     }
 }
+
+
+

@@ -2,29 +2,27 @@
 {
     public class VisualEntity : Entity
     {
-        public VisualEntity(int x, int y, int width, int height, char symbol) : base(x, y, width, height, symbol)
-        {
-        }
+        public VisualEntity(int x, int y, int width, int height, char symbol) : base(x, y, width, height, symbol) { }
 
-        // Переопределяем методы столкновений, чтобы они не учитывались для визуальных объектов
-        public override bool IsCollidingBottom(Entity other)
+        public override bool IsCollidingRight(Entity other)
         {
-            return false;
-        }
-
-        public override bool IsCollidingTop(Entity other)
-        {
-            return false;
+            return base.IsCollidingRight(other);
         }
 
         public override bool IsCollidingLeft(Entity other)
         {
-            return false;
+            return base.IsCollidingLeft(other);
         }
 
-        public override bool IsCollidingRight(Entity other)
+        public override bool IsCollidingBottom(Entity other)
         {
-            return false;
+            return base.IsCollidingBottom(other);
+        }
+
+        public override bool IsColliding(Entity other)
+        {
+            return base.IsColliding(other);
         }
     }
 }
+

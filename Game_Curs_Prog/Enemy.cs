@@ -2,9 +2,13 @@
 {
     public class Enemy : Entity
     {
-        public Enemy(int x, int y, int width, int height, char symbol)
-            : base(x, y, width, height, symbol)
+        public Enemy(int x, int y, int width, int height, char symbol) : base(x, y, width, height, symbol) { }
+
+        public new void Update(List<Entity> entities)
         {
+            // Логика для обновления врага
         }
     }
 }
+
+

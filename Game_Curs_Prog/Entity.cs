@@ -17,35 +17,52 @@
             Symbol = symbol;
         }
 
-        public virtual bool IsCollidingBottom(Entity other)
+        public virtual bool IsColliding(Entity other)
         {
-            return Y + Height == other.Y && X < other.X + other.Width && X + Width > other.X;
+            return X < other.X + other.Width &&
+                   X + Width > other.X &&
+                   Y < other.Y + other.Height &&
+                   Y + Height > other.Y;
         }
 
-        public virtual bool IsCollidingTop(Entity other)
+        public virtual bool IsCollidingBottom(Entity other)
         {
-            return Y == other.Y + other.Height && X < other.X + other.Width && X + Width > other.X;
+            return X < other.X + other.Width &&
+                   X + Width > other.X &&
+                   Y + Height == other.Y;
         }
 
         public virtual bool IsCollidingLeft(Entity other)
         {
-            return X == other.X + other.Width && Y < other.Y + other.Height && Y + Height > other.Y;
+            return X == other.X + other.Width &&
+                   Y < other.Y + other.Height &&
+                   Y + Height > other.Y;
         }
 
         public virtual bool IsCollidingRight(Entity other)
         {
-            return X + Width == other.X && Y < other.Y + other.Height && Y + Height > other.Y;
+            return X + Width == other.X &&
+                   Y < other.Y + other.Height &&
+                   Y + Height > other.Y;
         }
 
-        public virtual bool IsCollidingInDirection(Entity other, int deltaX, int deltaY)
+        public bool IsCollidingInDirection(Entity other, int directionX, int directionY)
         {
-            int newX = X + deltaX;
-            int newY = Y + deltaY;
-            return newX < other.X + other.Width && newX + Width > other.X &&
-                   newY < other.Y + other.Height && newY + Height > other.Y;
+            int projectedX = X + directionX;
+            int projectedY = Y + directionY;
+
+            return projectedX < other.X + other.Width &&
+                   projectedX + Width > other.X &&
+                   projectedY < other.Y + other.Height &&
+                   projectedY + Height > other.Y;
         }
     }
 }
+
+
+
+
+
 
 
 
