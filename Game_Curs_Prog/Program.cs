@@ -25,7 +25,7 @@ class Program
     static Background background;
     static List<VisualEntity> visualEntities = new List<VisualEntity> { visual }; // Список визуальных объектов
 
-    static double gravity = 0.05; // Уменьшенное значение гравитации для более плавного прыжка
+    static double gravity = 0.03; // Уменьшенное значение гравитации для более плавного прыжка
     static Timer gravityTimer;
     static int gravityStepTime = 100; // Время на смещение на один символ вниз (в миллисекундах)
 

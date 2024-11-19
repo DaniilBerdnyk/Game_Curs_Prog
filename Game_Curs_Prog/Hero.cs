@@ -9,14 +9,17 @@
         private int originalHeight;
         private const int CrouchHeight = 2; // Высота героя при приседании
         private int jumpStartY;
-        private const int MaxJumpHeight = 5;
+        private const int MaxJumpHeight = 6;
         private const int GroundTimeThreshold = 30;
         private DateTime? firstGroundTime;
+        private const int apexDelay = 50; // Задержка в апексе прыжка (в миллисекундах)
+        private bool apexReached = false; // Флаг достижения апекса прыжка
+        private DateTime apexReachedTime; // Время достижения апекса прыжка
         public double jumpVelocity; // Публичное поле
-        private const double initialJumpVelocity = 0.2; // Уменьшенное значение начальной скорости прыжка
-        private const double gravity = 0.005; // Уменьшенное значение гравитации
+        private const double initialJumpVelocity = 0.1; // Уменьшенное значение начальной скорости прыжка
+        private const double gravity = 0.002; // Уменьшенное значение гравитации
         private const double acceleration = 0.05; // Уменьшенное значение ускорения
-        public const double speed = 0.15; // Время шага
+        public const double speed = 0.20; // Время шага
         public double velocityX; // Публичное поле
         private double slideSpeed; // Скорость скольжения
         private const double friction = 0.03; // Трение
@@ -38,6 +41,7 @@
             lastMoveDirection = "right";
         }
 
+
         public void Jump(List<Entity> entities)
         {
             if (!IsJumping && CanJump && !IsCrouching)
@@ -45,7 +49,7 @@
                 jumpStartY = Y;
                 IsJumping = true;
                 CanJump = false;
-                jumpVelocity = initialJumpVelocity * Program.game_speed;
+                jumpVelocity = initialJumpVelocity * 0.5; // Уменьшенное значение начальной скорости прыжка для более медленного подъема
             }
         }
 
@@ -83,18 +87,37 @@
             UpdateGroundTime(entities);
         }
 
+
+        
         private void UpdateJump(List<Entity> entities)
         {
             if (IsJumping)
             {
+                // Если герой достиг апекса и задержка еще не завершена, ждем
+                if (apexReached && (DateTime.Now - apexReachedTime).TotalMilliseconds < apexDelay)
+                {
+                    return;
+                }
+
                 double newY = Y - jumpVelocity;
                 jumpVelocity -= gravity;
 
                 bool isColliding = entities.Any(e => e != this && IsCollidingInDirection(e, 0, (int)newY - Y));
                 if (isColliding || Y <= jumpStartY - MaxJumpHeight)
                 {
-                    IsJumping = false;
-                    jumpVelocity = 0;
+                    // Если герой достиг апекса прыжка
+                    if (!apexReached)
+                    {
+                        apexReached = true;
+                        apexReachedTime = DateTime.Now;
+                        jumpVelocity = 0; // Останавливаем вертикальную скорость
+                        return;
+                    }
+                    else
+                    {
+                        apexReached = false; // Сбрасываем флаг после задержки
+                        IsJumping = false;
+                    }
                 }
                 else
                 {
@@ -137,6 +160,7 @@
                 }
             }
         }
+
 
         private void UpdateMovement(List<Entity> entities)
         {
