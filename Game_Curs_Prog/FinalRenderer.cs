@@ -7,7 +7,7 @@ namespace Game_Curs_Prog
 {
     public static class FinalRenderer
     {
-        public static void Draw(int consoleWidth, int consoleHeight, List<Entity> entities, List<Hero> teammates, Background background, int cameraX, int cameraY, double parallaxFactor)
+        public static void Draw(int consoleWidth, int consoleHeight, List<Entity> entities, List<VisualEntity> visualEntities, List<Hero> teammates, Background background, int cameraX, int cameraY, double parallaxFactor)
         {
             // Инициализация буфера символами фона и объектов
             char[,] frameBuffer = new char[consoleWidth, consoleHeight];
@@ -26,38 +26,37 @@ namespace Game_Curs_Prog
                 }
             }
 
-            // Заполнение буфера объектов и визуальных элементов
-            foreach (var entity in entities)
+            // Заполнение буфера визуальных объектов
+            foreach (var visualEntity in visualEntities)
             {
-                if (entity is VisualEntity)
+                for (int y = 0; y < visualEntity.Height; y++)
                 {
-                    for (int y = 0; y < entity.Height; y++)
+                    for (int x = 0; x < visualEntity.Width; x++)
                     {
-                        for (int x = 0; x < entity.Width; x++)
-                        {
-                            int drawX = entity.X - cameraX + x;
-                            int drawY = entity.Y - cameraY + y;
+                        int drawX = visualEntity.X - cameraX + x;
+                        int drawY = visualEntity.Y - cameraY + y;
 
-                            if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
-                            {
-                                visualFrame[drawX, drawY] = entity.Symbol;
-                            }
+                        if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
+                        {
+                            visualFrame[drawX, drawY] = visualEntity.Symbol;
                         }
                     }
                 }
-                else
-                {
-                    for (int y = 0; y < entity.Height; y++)
-                    {
-                        for (int x = 0; x < entity.Width; x++)
-                        {
-                            int drawX = entity.X - cameraX + x;
-                            int drawY = entity.Y - cameraY + y;
+            }
 
-                            if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
-                            {
-                                objectFrame[drawX, drawY] = entity.Symbol;
-                            }
+            // Заполнение буфера игровых объектов
+            foreach (var gameEntity in entities)
+            {
+                for (int y = 0; y < gameEntity.Height; y++)
+                {
+                    for (int x = 0; x < gameEntity.Width; x++)
+                    {
+                        int drawX = gameEntity.X - cameraX + x;
+                        int drawY = gameEntity.Y - cameraY + y;
+
+                        if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
+                        {
+                            objectFrame[drawX, drawY] = gameEntity.Symbol;
                         }
                     }
                 }
@@ -129,6 +128,7 @@ namespace Game_Curs_Prog
         }
     }
 }
+
 
 
 

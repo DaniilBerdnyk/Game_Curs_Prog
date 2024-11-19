@@ -5,14 +5,17 @@
         public int JumpHeight { get; set; }
         public bool IsJumping { get; set; }
         public bool CanJump { get; set; } = false;
+        public bool IsCrouching { get; set; } = false;
+        private int originalHeight;
+        private const int CrouchHeight = 2; // Высота героя при приседании
         private int jumpStartY;
-        private const int MaxJumpHeight = 7;
+        private const int MaxJumpHeight = 5;
         private const int GroundTimeThreshold = 30;
         private DateTime? firstGroundTime;
         public double jumpVelocity; // Публичное поле
-        private const double initialJumpVelocity = 0.2;
-        private const double gravity = 0.01;
-        private const double acceleration = 0.1; // Ускорение
+        private const double initialJumpVelocity = 0.2; // Уменьшенное значение начальной скорости прыжка
+        private const double gravity = 0.005; // Уменьшенное значение гравитации
+        private const double acceleration = 0.05; // Уменьшенное значение ускорения
         public const double speed = 0.15; // Время шага
         public double velocityX; // Публичное поле
         private double slideSpeed; // Скорость скольжения
@@ -25,6 +28,8 @@
         {
             JumpHeight = MaxJumpHeight;
             IsJumping = false;
+            IsCrouching = false;
+            originalHeight = height;
             jumpVelocity = initialJumpVelocity;
             velocityX = 0;
             slideSpeed = 0;
@@ -35,7 +40,7 @@
 
         public void Jump(List<Entity> entities)
         {
-            if (!IsJumping && CanJump)
+            if (!IsJumping && CanJump && !IsCrouching)
             {
                 jumpStartY = Y;
                 IsJumping = true;
@@ -44,10 +49,36 @@
             }
         }
 
+        public void Crouch()
+        {
+            if (!IsJumping)
+            {
+                IsCrouching = true;
+                Height = CrouchHeight;
+            }
+        }
+
+        public void StandUp(List<Entity> entities)
+        {
+            if (IsCrouching)
+            {
+                IsCrouching = false;
+
+                // Проверка, что герой не провалится под землю
+                if (IsOnGround(entities))
+                {
+                    Y -= 2; // Поднять героя на два символа перед увеличением высоты
+                }
+
+                Height = originalHeight;
+            }
+        }
+
         public void Update(List<Entity> entities)
         {
             UpdateJump(entities);
             UpdateMovement(entities);
+            UpdateCrouch(entities); // Обновление приседания
             CheckCollisions(entities);
             UpdateGroundTime(entities);
         }
@@ -112,7 +143,7 @@
             DateTime currentTime = DateTime.Now;
             double timeSinceLastMove = (currentTime - lastMoveTime).TotalMilliseconds;
 
-            if (timeSinceLastMove >= speed * 1000) // Преобразуем скорость в миллисекунды
+            if (timeSinceLastMove >= speed * 1000) // Проверка времени шага
             {
                 if (Controls.IsKeyPressed(ConsoleKey.A))
                 {
@@ -134,6 +165,18 @@
                     lastMoveTime = currentTime;
                     lastMoveDirection = "right";
                 }
+            }
+        }
+
+        private void UpdateCrouch(List<Entity> entities)
+        {
+            if (Controls.IsKeyPressed(ConsoleKey.S))
+            {
+                Crouch();
+            }
+            else
+            {
+                StandUp(entities);
             }
         }
 
@@ -203,6 +246,3 @@
         }
     }
 }
-
-
-

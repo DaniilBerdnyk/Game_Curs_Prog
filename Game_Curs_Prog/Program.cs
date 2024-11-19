@@ -21,8 +21,9 @@ class Program
     static StaticEntity rightWall = new StaticEntity(999, 0, 1, 40, ' ');
     static StaticEntity ground = new StaticEntity(0, 19, 1000, 1, '▀');
 
-    static List<Entity> entities = new List<Entity> { visual, player, enemy, Platform, topWall, leftWall, rightWall, ground };
+    static List<Entity> entities = new List<Entity> { player, enemy, Platform, topWall, leftWall, rightWall, ground };
     static Background background;
+    static List<VisualEntity> visualEntities = new List<VisualEntity> { visual }; // Список визуальных объектов
 
     static double gravity = 0.05; // Уменьшенное значение гравитации для более плавного прыжка
     static Timer gravityTimer;
@@ -85,7 +86,7 @@ class Program
         player.Y = 1;
         player.IsJumping = false;
         player.CanJump = true;
-        FinalRenderer.Draw(80, 20, entities, teammates, background, cameraX, cameraY, 0.5);
+        FinalRenderer.Draw(80, 20, entities,visualEntities, teammates, background, cameraX, cameraY, 0.5);
     }
 
 static void StartGravityLoop(int consoleHeight)
@@ -339,7 +340,6 @@ enum CameraMode
             Console.WriteLine($"Error receiving data: {ex.Message}");
         }
     }
-
     static void GameLoop(int consoleWidth, int consoleHeight, int framesPerSecond, double parallaxFactor)
     {
         while (running)
@@ -360,43 +360,67 @@ enum CameraMode
                 entity.Update(entities);
             }
 
-            foreach (var entity in entities.OfType<Teammate>())
+            foreach (var entity in teammates)
             {
                 // Обновление позиции напарника на основе данных, полученных по сети
                 // Например:
                 // entity.UpdatePosition(полученные_данные_по_сети.X, полученные_данные_по_сети.Y);
             }
 
-            char[,] objectFrame = new char[consoleWidth, consoleHeight];
+            // Создание массивов для рендеринга
+            char[,] visualEntityFrame = new char[consoleWidth, consoleHeight];
+            char[,] gameEntityFrame = new char[consoleWidth, consoleHeight];
+            char[,] backgroundFrame = background.GenerateParallaxBackground(consoleWidth, consoleHeight, cameraX, cameraY, parallaxFactor);
+            char[,] finalFrame = new char[consoleWidth, consoleHeight];
 
-            foreach (var entity in entities)
+            // Заполнение массива визуальных объектов
+            foreach (var visualEntity in visualEntities)
             {
-                for (int y = 0; y < entity.Height; y++)
+                for (int y = 0; y < visualEntity.Height; y++)
                 {
-                    for (int x = 0; x < entity.Width; x++)
+                    for (int x = 0; x < visualEntity.Width; x++)
                     {
-                        int drawX = entity.X - cameraX + x;
-                        int drawY = entity.Y - cameraY + y;
+                        int drawX = visualEntity.X - cameraX + x;
+                        int drawY = visualEntity.Y - cameraY + y;
 
                         if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
                         {
-                            objectFrame[drawX, drawY] = entity.Symbol;
+                            visualEntityFrame[drawX, drawY] = visualEntity.Symbol;
                         }
                     }
                 }
             }
 
-            char[,] backgroundFrame = background.GenerateParallaxBackground(consoleWidth, consoleHeight, cameraX, cameraY, parallaxFactor);
+            // Заполнение массива объектов игры
+            foreach (var gameEntity in entities)
+            {
+                for (int y = 0; y < gameEntity.Height; y++)
+                {
+                    for (int x = 0; x < gameEntity.Width; x++)
+                    {
+                        int drawX = gameEntity.X - cameraX + x;
+                        int drawY = gameEntity.Y - cameraY + y;
 
-            char[,] finalFrame = new char[consoleWidth, consoleHeight];
+                        if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
+                        {
+                            gameEntityFrame[drawX, drawY] = gameEntity.Symbol;
+                        }
+                    }
+                }
+            }
 
+            // Заполнение финального массива
             for (int y = 0; y < consoleHeight; y++)
             {
                 for (int x = 0; x < consoleWidth; x++)
                 {
-                    if (objectFrame[x, y] != '\0')
+                    if (visualEntityFrame[x, y] != '\0')
                     {
-                        finalFrame[x, y] = objectFrame[x, y];
+                        finalFrame[x, y] = visualEntityFrame[x, y];
+                    }
+                    else if (gameEntityFrame[x, y] != '\0')
+                    {
+                        finalFrame[x, y] = gameEntityFrame[x, y];
                     }
                     else
                     {
@@ -405,6 +429,7 @@ enum CameraMode
                 }
             }
 
+            // Отрисовка финального массива
             FinalRenderer.RenderFinalFrame(finalFrame, consoleWidth, consoleHeight);
 
             // Отправляем координаты игрока на сервер
@@ -412,6 +437,7 @@ enum CameraMode
             Thread.Sleep(1000 / framesPerSecond);
         }
     }
+
 
 
 }
