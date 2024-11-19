@@ -19,6 +19,11 @@
 
         public virtual bool IsColliding(Entity other)
         {
+            if (other == null)
+            {
+                return false;
+            }
+
             return X < other.X + other.Width &&
                    X + Width > other.X &&
                    Y < other.Y + other.Height &&
@@ -27,6 +32,11 @@
 
         public virtual bool IsCollidingBottom(Entity other)
         {
+            if (other == null)
+            {
+                return false;
+            }
+
             return X < other.X + other.Width &&
                    X + Width > other.X &&
                    Y + Height == other.Y;
@@ -34,6 +44,11 @@
 
         public virtual bool IsCollidingLeft(Entity other)
         {
+            if (other == null)
+            {
+                return false;
+            }
+
             return X == other.X + other.Width &&
                    Y < other.Y + other.Height &&
                    Y + Height > other.Y;
@@ -41,6 +56,11 @@
 
         public virtual bool IsCollidingRight(Entity other)
         {
+            if (other == null)
+            {
+                return false;
+            }
+
             return X + Width == other.X &&
                    Y < other.Y + other.Height &&
                    Y + Height > other.Y;
@@ -48,6 +68,11 @@
 
         public virtual bool IsCollidingInDirection(Entity other, int directionX, int directionY)
         {
+            if (other == null)
+            {
+                return false;
+            }
+
             int projectedX = X + directionX;
             int projectedY = Y + directionY;
 
@@ -58,19 +83,6 @@
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -1,7 +1,11 @@
-﻿namespace Game_Curs_Prog
+﻿using SFML.Graphics;
+
+namespace Game_Curs_Prog
 {
     public class Hero : Entity
     {
+        public string State { get; private set; } = "idle";
+        private Dictionary<string, Texture> textures;
         public int JumpHeight { get; set; }
         public bool IsJumping { get; set; }
         public bool CanJump { get; set; } = false;
@@ -39,8 +43,51 @@
             lastMoveTime = DateTime.Now;
             lastJumpMoveTime = DateTime.Now;
             lastMoveDirection = "right";
+
+            textures = new Dictionary<string, Texture>
+            {
+             { "idle", new Texture("hero.txt", ' ', width, height) },
+             { "run", new Texture("hero_run.txt", ' ', width, height) },
+             { "jump", new Texture("hero_jump.txt", ' ', width, height) },
+             { "crouch", new Texture("hero_crouch.txt", ' ', width, height) }
+            };
+
+
         }
 
+
+        public (int centerX, int centerY) GetCenter()
+            {
+                int centerX = X + Width / 2;
+                int centerY = Y + Height / 2;
+                return (centerX, centerY);
+            }
+
+        
+            
+
+            public void UpdateState(string newState)
+            {
+                if (textures.ContainsKey(newState))
+                {
+                    State = newState;
+                }
+            }
+
+            public Texture GetCurrentTexture()
+            {
+                return textures[State];
+            }
+        
+
+    public void Update(List<Entity> entities)
+        {
+            UpdateJump(entities);
+            UpdateMovement(entities);
+            UpdateCrouch(entities); // Обновление приседания
+            CheckCollisions(entities);
+            UpdateGroundTime(entities);
+        }
 
         public void Jump(List<Entity> entities)
         {
@@ -78,17 +125,6 @@
             }
         }
 
-        public void Update(List<Entity> entities)
-        {
-            UpdateJump(entities);
-            UpdateMovement(entities);
-            UpdateCrouch(entities); // Обновление приседания
-            CheckCollisions(entities);
-            UpdateGroundTime(entities);
-        }
-
-
-        
         private void UpdateJump(List<Entity> entities)
         {
             if (IsJumping)
@@ -160,7 +196,6 @@
                 }
             }
         }
-
 
         private void UpdateMovement(List<Entity> entities)
         {
@@ -258,8 +293,14 @@
             return entities.Any(e => e != this && IsCollidingBottom(e));
         }
 
-        private bool IsCollidingInDirection(Entity entity, int directionX, int directionY)
+        public bool IsCollidingInDirection(Entity entity, int directionX, int directionY)
         {
+            if (entity == null)
+            {
+                // Если entity равен null, возвращаем false, так как столкновение невозможно
+                return false;
+            }
+
             int projectedX = X + directionX;
             int projectedY = Y + directionY;
 
@@ -268,5 +309,6 @@
                    projectedY < entity.Y + entity.Height &&
                    projectedY + Height > entity.Y;
         }
+
     }
 }

@@ -30,26 +30,58 @@ namespace Game_Curs_Prog
             { ConsoleKey.Escape, false }
         };
 
-        public static void StartKeyChecking(int framesPerSecond)
+        public static void StartKeyChecking(int framesPerSecond, List<Entity> entities)
         {
-            int delay = 1000 / framesPerSecond;
-            Thread thread = new Thread(() =>
+            while (true)
             {
-                while (true)
+                // Обновляем состояния клавиш
+                UpdateKeyStates();
+
+                Hero player = (Hero)entities.FirstOrDefault(e => e is Hero);
+
+                if (player != null)
                 {
-                    foreach (var keyMapping in keyMappings)
+                    if (IsKeyPressed(ConsoleKey.W))
                     {
-                        short keyState = GetAsyncKeyState(keyMapping.Value);
-                        lock (keyStates)
-                        {
-                            keyStates[keyMapping.Key] = (keyState & 0x8000) != 0;
-                        }
+                        player.UpdateState("jump");
                     }
-                    Thread.Sleep(delay); // Минимальная задержка между проверками
+                    else if (IsKeyPressed(ConsoleKey.S))
+                    {
+                        player.UpdateState("crouch");
+                    }
+                    else if (IsKeyPressed(ConsoleKey.A) || IsKeyPressed(ConsoleKey.D))
+                    {
+                        player.UpdateState("run");
+                    }
+                    else
+                    {
+                        player.UpdateState("idle");
+                    }
+
+                    if (IsKeyPressed(ConsoleKey.R)) // Добавим переключение режима камеры по клавише R
+                    {
+                        Global.currentCameraMode = (Global.CameraMode)(((int)Global.currentCameraMode + 1) % Enum.GetNames(typeof(Global.CameraMode)).Length);
+                        Console.WriteLine($"Switched Camera Mode to: {Global.currentCameraMode}");
+                        Thread.Sleep(200); // Небольшая задержка для предотвращения многократного срабатывания переключения
+                    }
                 }
-            });
-            thread.Start();
+
+                Thread.Sleep(1000 / framesPerSecond);
+            }
         }
+
+
+        private static void UpdateKeyStates()
+        {
+            lock (keyStates)
+            {
+                foreach (var keyMapping in keyMappings)
+                {
+                    keyStates[keyMapping.Key] = GetAsyncKeyState(keyMapping.Value) < 0;
+                }
+            }
+        }
+   
 
         public static bool IsKeyPressed(ConsoleKey key)
         {

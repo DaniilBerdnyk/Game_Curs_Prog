@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using System.Threading;
 
 namespace Game_Curs_Prog
@@ -13,6 +14,7 @@ namespace Game_Curs_Prog
             char[,] frameBuffer = new char[consoleWidth, consoleHeight];
             char[,] objectFrame = new char[consoleWidth, consoleHeight];
             char[,] visualFrame = new char[consoleWidth, consoleHeight];
+            char[,] textureFrame = new char[consoleWidth, consoleHeight];
 
             // Генерация фона с параллаксом
             char[,] parallaxBackground = background.GenerateParallaxBackground(1000, 40, cameraX, cameraY, parallaxFactor);
@@ -62,19 +64,33 @@ namespace Game_Curs_Prog
                 }
             }
 
-            // Добавление напарников в отрисовку
-            foreach (var teammate in teammates)
+            // Заполнение буфера текстур
+            foreach (var gameEntity in entities)
             {
-                for (int y = 0; y < teammate.Height; y++)
+                if (Texture.TypeTextureMapping.ContainsKey(gameEntity.GetType()))
                 {
-                    for (int x = 0; x < teammate.Width; x++)
-                    {
-                        int drawX = teammate.X - cameraX + x;
-                        int drawY = teammate.Y - cameraY + y;
+                    string textureFilePath = Texture.TypeTextureMapping[gameEntity.GetType()];
+                    Texture texture = new Texture(textureFilePath, ' ', gameEntity.Width, gameEntity.Height);
 
-                        if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
+                    // Проверка успешности загрузки текстуры
+                    if (texture.LoadImage(textureFilePath))
+                    {
+                        // Смещение текстуры относительно героя
+                        int offsetX = (texture.Width - gameEntity.Width) / 2 ; // Сдвиг на 1 символ вправо
+                        int offsetY = texture.Height - gameEntity.Height; // Сдвиг на 1 символ выше
+
+                        for (int y = 0; y < texture.Height; y++)
                         {
-                            objectFrame[drawX, drawY] = teammate.Symbol;
+                            for (int x = 0; x < texture.Width; x++)
+                            {
+                                int drawX = gameEntity.X - cameraX + x - offsetX;
+                                int drawY = gameEntity.Y - cameraY + y - offsetY;
+
+                                if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight && texture.Image[x, y] != ' ')
+                                {
+                                    textureFrame[drawX, drawY] = texture.Image[x, y];
+                                }
+                            }
                         }
                     }
                 }
@@ -89,9 +105,17 @@ namespace Game_Curs_Prog
                     {
                         frameBuffer[x, y] = visualFrame[x, y];
                     }
+                    else if (textureFrame[x, y] != '\0')
+                    {
+                        frameBuffer[x, y] = textureFrame[x, y];
+                    }
                     else if (objectFrame[x, y] != '\0')
                     {
                         frameBuffer[x, y] = objectFrame[x, y];
+                    }
+                    else
+                    {
+                        frameBuffer[x, y] = parallaxBackground[x, y]; // Оставляем фон как есть
                     }
                 }
             }
@@ -128,10 +152,6 @@ namespace Game_Curs_Prog
         }
     }
 }
-
-
-
-
 
 
 

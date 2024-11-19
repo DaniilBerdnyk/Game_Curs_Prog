@@ -11,7 +11,7 @@ class Program
     static NetworkStream stream;
     static Thread receiveThread;
     static bool running = true;
-    static Hero player = new Hero(2, 5, 4, 4, '█');
+   
     static List<Hero> teammates = new List<Hero>(); // Список напарников
     static Enemy enemy = new Enemy(18, 3, 3, 4, 'E');
     static VisualEntity visual = new VisualEntity(18, 3, 3, 4, 'V');
@@ -21,9 +21,10 @@ class Program
     static StaticEntity rightWall = new StaticEntity(999, 0, 1, 40, ' ');
     static StaticEntity ground = new StaticEntity(0, 19, 1000, 1, '▀');
 
-    static List<Entity> entities = new List<Entity> { player, enemy, Platform, topWall, leftWall, rightWall, ground };
+    static List<Entity> entities = new List<Entity> {player, enemy, Platform, topWall, leftWall, rightWall, ground };
     static Background background;
     static List<VisualEntity> visualEntities = new List<VisualEntity> { visual }; // Список визуальных объектов
+    static List<Texture> textures = new List<Texture>(); // Список текстур
 
     static double gravity = 0.03; // Уменьшенное значение гравитации для более плавного прыжка
     static Timer gravityTimer;
@@ -35,6 +36,8 @@ class Program
 
     static int cameraX = 0;
     static int cameraY = 0;
+
+    static Hero player;
 
     static void Main(string[] args)
     {
@@ -67,29 +70,47 @@ class Program
         Console.SetBufferSize(2000, 1000);
         Thread.Sleep(100);
 
-        Thread gameThread = new Thread(() => GameLoop(consoleWidth, consoleHeight, framesPerSecond, parallaxFactor));
+        // Инициализация героя с текстурами и состояниями
+        player = new Hero(10, 10, 3, 3, '█');
+        entities.Add(player);
+
+        Thread gameThread = new Thread(() => GameLoop(consoleWidth, consoleHeight, framesPerSecond, parallaxFactor, player));
         gameThread.Start();
+
+        // Запуск проверки клавиш
+        Thread controlsThread = new Thread(() => Controls.StartKeyChecking(framesPerSecond, entities));
+        controlsThread.Start();
 
         // Запуск гравитационного таймера
         StartGravityLoop(consoleHeight);
 
-        Controls.StartKeyChecking(framesPerSecond);
-
         gameThread.Join();
+        controlsThread.Join();
         gravityTimer.Dispose(); // Остановка таймера при завершении игры
     }
 
 
+
     public static void RespawnPlayer()
     {
-        player.X = 2;
-        player.Y = 1;
-        player.IsJumping = false;
-        player.CanJump = true;
-        FinalRenderer.Draw(80, 20, entities,visualEntities, teammates, background, cameraX, cameraY, 0.5);
+        if (player != null)
+        {
+            player.X = 2;
+            player.Y = 1;
+            player.IsJumping = false;
+            player.CanJump = true;
+            FinalRenderer.Draw(80, 20, entities, visualEntities, teammates, background, cameraX, cameraY, 0.5);
+        }
+        else
+        {
+            Console.WriteLine("Player object is null. Cannot respawn.");
+        }
     }
 
-static void StartGravityLoop(int consoleHeight)
+
+
+
+    static void StartGravityLoop(int consoleHeight)
 {
     gravityTimer = new Timer(ApplyGravityToAllEntities, consoleHeight, 0, (int)(gravity * 1000));
 }
@@ -123,8 +144,8 @@ static void ApplyGravityToAllEntities(object state)
     }
 }
 
-static void ApplyGravity(Entity entity, int consoleHeight)
-{
+    static void ApplyGravity(Entity entity, int consoleHeight)
+    {
     if (entity is Hero hero && hero.IsJumping)
         return;
 
@@ -169,11 +190,11 @@ static void ApplyGravity(Entity entity, int consoleHeight)
     {
         entity.Y = 0;
     }
-}
+    }
 
 
 
-enum CameraMode
+    enum CameraMode
     {
         Basic,
         Advanced,
@@ -181,29 +202,41 @@ enum CameraMode
     }
 
     static CameraMode currentCameraMode = CameraMode.Hybrid;
-
-    static void UpdateCamera(int consoleWidth, int consoleHeight)
+    static void UpdateCamera(Hero player, int consoleWidth, int consoleHeight)
     {
+        if (player == null)
+        {
+            return;
+        }
+
         // Обновление камеры в зависимости от текущего режима
-        if (currentCameraMode == CameraMode.Basic)
+        switch (Global.currentCameraMode)
         {
-            UpdateBasicCamera(consoleWidth, consoleHeight);
-        }
-        else if (currentCameraMode == CameraMode.Advanced)
-        {
-            UpdateAdvancedCamera(consoleWidth, consoleHeight);
-        }
-        else if (currentCameraMode == CameraMode.Hybrid)
-        {
-            UpdateHybridCamera(consoleWidth, consoleHeight);
+            case Global.CameraMode.Basic:
+                UpdateBasicCamera(player, consoleWidth, consoleHeight);
+                break;
+            case Global.CameraMode.Advanced:
+                UpdateAdvancedCamera(consoleWidth, consoleHeight);
+                break;
+            case Global.CameraMode.Hybrid:
+                UpdateHybridCamera(consoleWidth, consoleHeight);
+                break;
         }
     }
 
-    static void UpdateBasicCamera(int consoleWidth, int consoleHeight)
+
+
+    static void UpdateBasicCamera(Hero player, int consoleWidth, int consoleHeight)
     {
-        const double cameraInertia = 0.06; // Коэффициент инерции камеры
-        int triggerThresholdX = consoleWidth / 3; // Порог для реакции камеры по горизонтали ближе к границе
-        int triggerThresholdY = consoleHeight / 3; // Порог для реакции камеры по вертикали ближе к границе
+        if (player == null)
+        {
+            // Если player равен null, выходим из метода, чтобы избежать NullReferenceException
+            return;
+        }
+
+        const double cameraInertia = 0.05; // Коэффициент инерции камеры
+        int triggerThresholdX = consoleWidth / 2; // Порог для реакции камеры по горизонтали ближе к границе
+        int triggerThresholdY = consoleHeight / 2; // Порог для реакции камеры по вертикали ближе к границе
 
         // Цель позиции камеры
         int targetCameraX = player.X - consoleWidth / 2;
@@ -222,6 +255,16 @@ enum CameraMode
         // Ограничение позиции камеры в пределах игрового поля
         cameraX = Math.Max(0, Math.Min(cameraX, 1000 - consoleWidth));
         cameraY = Math.Max(0, Math.Min(cameraY, 1000 - consoleHeight));
+
+        // Убедимся, что камера не выходит за границы игрового поля по вертикали
+        if (cameraY < 0)
+        {
+            cameraY = 0;
+        }
+        if (cameraY + consoleHeight > 40) // Предполагаемая высота игрового поля - 40
+        {
+            cameraY = 40 - consoleHeight;
+        }
     }
 
 
@@ -232,11 +275,8 @@ enum CameraMode
         const double cameraInertia = 0.05; // Коэффициент инерции камеры
         const double followSpeed = 0.05; // Скорость следования камеры за персонажем
         const double overtakeSpeed = 0.02; // Скорость обгона камеры
-        int centerX = consoleWidth / 2; // Центр экрана по горизонтали
-        int centerY = consoleHeight / 2; // Центр экрана по вертикали
-
-        // Получение скорости персонажа из класса Hero
-        double playerSpeed = Hero.speed;
+        int centerX = consoleWidth / 4; // Центр экрана по горизонтали
+        int centerY = consoleHeight / 4; // Центр экрана по вертикали
 
         // Цель позиции камеры
         int targetCameraX = player.X - centerX;
@@ -265,26 +305,56 @@ enum CameraMode
         // Ограничение позиции камеры в пределах игрового поля
         cameraX = Math.Max(0, Math.Min(cameraX, 1000 - consoleWidth));
         cameraY = Math.Max(0, Math.Min(cameraY, 1000 - consoleHeight));
+
+        // Убедимся, что камера не выходит за границы игрового поля по вертикали
+        if (cameraY < 0)
+        {
+            cameraY = 0;
+        }
+        if (cameraY + consoleHeight > 40) // Предполагаемая высота игрового поля - 40
+        {
+            cameraY = 40 - consoleHeight;
+        }
     }
+
 
     static char previousCameraMode = 'B'; // 'B' для базового режима, 'A' для продвинутого режима
 
+    static bool isSwitching = false; // Переключатель для предотвращения частого переключения
     static void UpdateHybridCamera(int consoleWidth, int consoleHeight)
     {
         int triggerThresholdX = consoleWidth / 4; // Порог для реакции камеры по горизонтали ближе к середине
         int triggerThresholdY = consoleHeight / 4; // Порог для реакции камеры по вертикали ближе к середине
 
+        if (isSwitching)
+        {
+            return; // Предотвращение частого переключения режимов
+        }
+
         // Проверка касания границы базового режима
         if (previousCameraMode == 'B')
         {
-            if (player.X < cameraX + triggerThresholdX || player.X > cameraX + consoleWidth - triggerThresholdX || player.Y < cameraY + triggerThresholdY || player.Y > cameraY + consoleHeight - triggerThresholdY)
+            if (player != null &&
+                (player.X < cameraX + triggerThresholdX || player.X > cameraX + consoleWidth - triggerThresholdX ||
+                player.Y < cameraY + triggerThresholdY || player.Y > cameraY + consoleHeight - triggerThresholdY))
             {
-                previousCameraMode = 'A';
-                UpdateAdvancedCamera(consoleWidth, consoleHeight);
+                // Добавим дополнительное условие для активации Advanced режима только в случае необходимости
+                if (player.X < cameraX + triggerThresholdX - 1 || player.X > cameraX + consoleWidth - triggerThresholdX + 1 ||
+                    player.Y < cameraY + triggerThresholdY - 1 || player.Y > cameraY + consoleHeight - triggerThresholdY + 1)
+                {
+                    previousCameraMode = 'A';
+                    isSwitching = true;
+                    UpdateAdvancedCamera(consoleWidth, consoleHeight);
+                    Task.Delay(500).ContinueWith(_ => isSwitching = false); // Задержка переключения на 500 мс
+                }
+                else
+                {
+                    UpdateBasicCamera(player, consoleWidth, consoleHeight);
+                }
             }
             else
             {
-                UpdateBasicCamera(consoleWidth, consoleHeight);
+                UpdateBasicCamera(player, consoleWidth, consoleHeight);
             }
         }
         else if (previousCameraMode == 'A')
@@ -297,10 +367,13 @@ enum CameraMode
             else
             {
                 previousCameraMode = 'B';
-                UpdateBasicCamera(consoleWidth, consoleHeight);
+                isSwitching = true;
+                UpdateBasicCamera(player, consoleWidth, consoleHeight);
+                Task.Delay(500).ContinueWith(_ => isSwitching = false); // Задержка переключения на 500 мс
             }
         }
     }
+
 
 
     static void SendData(string message)
@@ -324,13 +397,32 @@ enum CameraMode
 
                 string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                 var coords = message.Split(',');
+
                 if (coords.Length == 2 && int.TryParse(coords[0], out int x) && int.TryParse(coords[1], out int y))
                 {
-                    var teammate = new Hero(x, y, 4, 4, '█');
-                    lock (teammates)
+                    // Добавляем напарника только если его еще нет
+                    if (teammates.Count == 0)
                     {
-                        teammates.Add(teammate);
-                        entities.Add(teammate);
+                        var teammate = new Hero(x, y, 4, 4, 'T');
+                        Texture teammateTexture = new Texture("teammate.txt", 'T', 4, 4);
+
+                        lock (teammates)
+                        {
+                            teammates.Add(teammate);
+                            entities.Add(teammate); // Добавляем напарника в список объектов игры
+                        }
+
+                        lock (textures)
+                        {
+                            textures.Add(teammateTexture); // Текстуру напарника добавляем в отдельный список текстур
+                        }
+                    }
+                    else
+                    {
+                        // Обновляем координаты существующего напарника
+                        var teammate = teammates[0];
+                        teammate.X = x;
+                        teammate.Y = y;
                     }
                 }
             }
@@ -340,14 +432,18 @@ enum CameraMode
             Console.WriteLine($"Error receiving data: {ex.Message}");
         }
     }
-    static void GameLoop(int consoleWidth, int consoleHeight, int framesPerSecond, double parallaxFactor)
+
+    static void GameLoop(int consoleWidth, int consoleHeight, int framesPerSecond, double parallaxFactor, Hero player)
     {
         while (running)
         {
             frameCounter++;
             PreRenderer.Update(entities, consoleWidth, consoleHeight);
 
-            UpdateCamera(consoleWidth, consoleHeight);
+            if (player != null)
+            {
+                UpdateCamera(player, consoleWidth, consoleHeight);
+            }
 
             // Обновление позиций героев и врагов
             foreach (var entity in entities.OfType<Hero>())
@@ -363,14 +459,13 @@ enum CameraMode
             foreach (var entity in teammates)
             {
                 // Обновление позиции напарника на основе данных, полученных по сети
-                // Например:
-                // entity.UpdatePosition(полученные_данные_по_сети.X, полученные_данные_по_сети.Y);
             }
 
             // Создание массивов для рендеринга
             char[,] visualEntityFrame = new char[consoleWidth, consoleHeight];
             char[,] gameEntityFrame = new char[consoleWidth, consoleHeight];
             char[,] backgroundFrame = background.GenerateParallaxBackground(consoleWidth, consoleHeight, cameraX, cameraY, parallaxFactor);
+            char[,] textureFrame = new char[consoleWidth, consoleHeight];
             char[,] finalFrame = new char[consoleWidth, consoleHeight];
 
             // Заполнение массива визуальных объектов
@@ -391,9 +486,39 @@ enum CameraMode
                 }
             }
 
-            // Заполнение массива объектов игры
+            // Заполнение массива текстур
             foreach (var gameEntity in entities)
             {
+                if (gameEntity is Hero hero)
+                {
+                    // Получаем текущую текстуру в зависимости от состояния героя
+                    Texture texture = hero.GetCurrentTexture();
+
+                    // Смещение текстуры относительно героя
+                    int offsetX = (texture.Width - gameEntity.Width) - 1;
+                    int offsetY = texture.Height - gameEntity.Height - 1;
+
+                    for (int y = 0; y < texture.Height; y++)
+                    {
+                        for (int x = 0; x < texture.Width; x++)
+                        {
+                            int drawX = gameEntity.X - cameraX + x - offsetX;
+                            int drawY = gameEntity.Y - cameraY + y - offsetY;
+
+                            if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight && texture.Image[x, y] != ' ')
+                            {
+                                textureFrame[drawX, drawY] = texture.Image[x, y];
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Заполнение массива игровых объектов
+            foreach (var gameEntity in entities)
+            {
+                if (gameEntity == null) continue; // Проверка на null
+
                 for (int y = 0; y < gameEntity.Height; y++)
                 {
                     for (int x = 0; x < gameEntity.Width; x++)
@@ -409,7 +534,7 @@ enum CameraMode
                 }
             }
 
-            // Заполнение финального массива
+            // Комбинирование всех слоев в финальный буфер
             for (int y = 0; y < consoleHeight; y++)
             {
                 for (int x = 0; x < consoleWidth; x++)
@@ -417,6 +542,10 @@ enum CameraMode
                     if (visualEntityFrame[x, y] != '\0')
                     {
                         finalFrame[x, y] = visualEntityFrame[x, y];
+                    }
+                    else if (textureFrame[x, y] != '\0')
+                    {
+                        finalFrame[x, y] = textureFrame[x, y];
                     }
                     else if (gameEntityFrame[x, y] != '\0')
                     {
@@ -433,12 +562,14 @@ enum CameraMode
             FinalRenderer.RenderFinalFrame(finalFrame, consoleWidth, consoleHeight);
 
             // Отправляем координаты игрока на сервер
-            SendData($"{entities.OfType<Hero>().First().X},{entities.OfType<Hero>().First().Y}");
+            if (player != null)
+            {
+                SendData($"{player.X},{player.Y}");
+            }
+
             Thread.Sleep(1000 / framesPerSecond);
         }
     }
-
-
 
 }
 
