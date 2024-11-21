@@ -344,21 +344,27 @@ namespace Game_Curs_Prog
 
         static char previousCameraMode = 'B'; // 'B' для базового режима, 'A' для продвинутого режима
 
-        static void UpdateHybridCamera(Hero player, int consoleWidth, int consoleHeight)
+        static void UpdateHybridCamera(Hero player , int consoleWidth, int consoleHeight)
         {
-            if (player == null)
+            int triggerThresholdX = consoleWidth / 4; // Порог для реакции камеры по горизонтали ближе к середине
+            int triggerThresholdY = consoleHeight / 4; // Порог для реакции камеры по вертикали ближе к середине
+
+            // Проверка касания границы базового режима
+            if (previousCameraMode == 'B')
             {
-                return;
+                if (player.X < cameraX + triggerThresholdX || player.X > cameraX + consoleWidth - triggerThresholdX || player.Y < cameraY + triggerThresholdY || player.Y > cameraY + consoleHeight - triggerThresholdY)
+                {
+                    previousCameraMode = 'A';
+                    UpdateAdvancedCamera(consoleWidth, consoleHeight);
+                }
+                else
+                {
+                    UpdateBasicCamera(player ,consoleWidth, consoleHeight);
+                }
             }
-
-            const double cameraInertiaX = 0.05; // Коэффициент инерции камеры по горизонтали
-            const double cameraInertiaY = 0.3; // Коэффициент инерции камеры по вертикали
-            int triggerThresholdX = consoleWidth; // Порог для реакции камеры по горизонтали
-            int triggerThresholdY = consoleHeight; // Порог для реакции камеры по вертикали
-
-            // Если предыдущий режим был Advanced, проверяем, нажаты ли клавиши для продолжения использования Advanced
-            if (previousCameraMode == 'A')
+            else if (previousCameraMode == 'A')
             {
+                // Проверка нажатия клавиш движения из класса Controls
                 if (Controls.IsKeyPressed(ConsoleKey.A) || Controls.IsKeyPressed(ConsoleKey.D))
                 {
                     UpdateAdvancedCamera(consoleWidth, consoleHeight);
@@ -366,20 +372,6 @@ namespace Game_Curs_Prog
                 else
                 {
                     previousCameraMode = 'B';
-                    UpdateBasicCamera(player, consoleWidth, consoleHeight);
-                }
-            }
-            // Если предыдущий режим был Basic, проверяем условия для перехода в Advanced
-            else if (previousCameraMode == 'B')
-            {
-                if (player.X < cameraX + triggerThresholdX || player.X > cameraX + consoleWidth - triggerThresholdX ||
-                    player.Y < cameraY + triggerThresholdY || player.Y > cameraY + consoleHeight - triggerThresholdY)
-                {
-                    previousCameraMode = 'A';
-                    UpdateAdvancedCamera(consoleWidth, consoleHeight);
-                }
-                else
-                {
                     UpdateBasicCamera(player, consoleWidth, consoleHeight);
                 }
             }
