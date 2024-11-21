@@ -1,5 +1,8 @@
 ﻿public static class Global
 {
+    public static List<string> audioFiles = new List<string>();
+    public static int currentTrackIndex = 0;
+
     public enum CameraMode
     {
         Basic,

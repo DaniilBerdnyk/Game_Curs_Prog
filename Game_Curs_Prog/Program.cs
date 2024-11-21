@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using NAudio.Wave;
+using NAudio.CoreAudioApi;
 
 namespace Game_Curs_Prog
 {
@@ -52,17 +54,63 @@ namespace Game_Curs_Prog
         static int cameraX = 0;
         static int cameraY = 0;
 
-
+        // Пути к файлам
+        public static string backgroundFilePath;
+        public static string audioDirectoryPath;
+        public static List<string> audioFiles;
+        public static int currentTrackIndex = 0;
 
         // Создаем объекты вне методов
-        static WaveOutEvent waveOutEvent; // для воспроизведения аудио
-        static AudioFileReader audioFile; // для чтения аудио файлов
+        public static WasapiOut waveOutEvent; // для воспроизведения аудио
+        public static AudioFileReader audioFile; // для чтения аудио файлов
+
+        public static void LoadResources()
+        {
+            string projectDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
+            backgroundFilePath = Path.Combine(projectDirectory, "Backgrounds", "background.txt");
+            audioDirectoryPath = Path.Combine(projectDirectory, "Music");
+
+            // Загрузите и используйте файлы с использованием этих путей
+            if (File.Exists(backgroundFilePath))
+            {
+                string backgroundContent = File.ReadAllText(backgroundFilePath);
+                // Используйте содержимое фона
+            }
+
+            if (Directory.Exists(audioDirectoryPath))
+            {
+                audioFiles = new List<string>(Directory.GetFiles(audioDirectoryPath, "*.wav"));
+               
+
+                if (audioFiles.Count > 0)
+                {
+                    Console.WriteLine($"Loading track: {audioFiles[currentTrackIndex]}");
+                    audioFile = new AudioFileReader(audioFiles[currentTrackIndex]);
+                    waveOutEvent.Init(audioFile);
+                    waveOutEvent.Volume = 0.5f; // Установите громкость (0.0 - без звука, 1.0 - максимум)
+                    waveOutEvent.PlaybackStopped += OnPlaybackStopped;
+                }
+                else
+                {
+                    Console.WriteLine("No valid audio files found.");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Directory not found: {audioDirectoryPath}");
+            }
+        }
+
 
         static void Main(string[] args)
         {
+            // Выбор устройства для воспроизведения музыки
+            SelectPlaybackDevice();
+
+            // Загрузка ресурсов
+            LoadResources();
+
             const double parallaxFactor = 0.5;
-            const string backgroundFilePath = "background.txt";
-            const string audioFilePath = "background_music.wav"; // Путь к вашему WAV файлу
 
             background = new Background(backgroundFilePath, defaultWidth, defaultHeight);
 
@@ -86,14 +134,11 @@ namespace Game_Curs_Prog
             Thread.Sleep(100);
 
             // Инициализация героя с текстурами и состояниями
-            // Инициализация героя с текстурами и состояниями
             player = new Hero(3, defaultHeight - 10, 3, 3, '█'); // Герой появляется внизу слева
             entities.Add(player);
 
-
-
             // Воспроизведение фоновой музыки с выбранного устройства
-            PlayBackgroundMusic(audioFilePath);
+            PlayBackgroundMusic();
 
             Thread gameThread = new Thread(() => GameLoop(framesPerSecond, parallaxFactor, player));
             gameThread.Start();
@@ -113,23 +158,72 @@ namespace Game_Curs_Prog
             StopBackgroundMusic();
         }
 
-
-
-
-        static void PlayBackgroundMusic(string audioFilePath)
+        public static void PlayBackgroundMusic()
         {
-            waveOutEvent = new WaveOutEvent();
-            audioFile = new AudioFileReader(audioFilePath);
-            waveOutEvent.Init(audioFile);
             waveOutEvent.Play();
         }
 
-        static void StopBackgroundMusic()
+        public static void StopBackgroundMusic()
         {
             waveOutEvent?.Stop();
             waveOutEvent?.Dispose();
             audioFile?.Dispose();
         }
+
+        public static void OnPlaybackStopped(object sender, StoppedEventArgs e)
+        {
+            try
+            {
+                if (audioFiles != null && audioFiles.Count > 0)
+                {
+                    currentTrackIndex = (currentTrackIndex + 1) % audioFiles.Count;
+                    Console.WriteLine($"Loading track: {audioFiles[currentTrackIndex]}");
+
+                    audioFile.Dispose();
+                    audioFile = new AudioFileReader(audioFiles[currentTrackIndex]);
+                    waveOutEvent.Init(audioFile);
+
+                    PlayBackgroundMusic();
+                }
+                else
+                {
+                    Console.WriteLine("No audio files to play.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading track: {ex.Message}");
+            }
+        }
+
+
+        public static void SelectPlaybackDevice()
+        {
+            Console.WriteLine("Available playback devices:");
+            var enumerator = new MMDeviceEnumerator();
+            var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+            int index = 0;
+            foreach (var device in devices)
+            {
+                Console.WriteLine($"{index++}: {device.FriendlyName}");
+            }
+
+            Console.Write("Select a device (by number): ");
+            int deviceNumber = int.Parse(Console.ReadLine());
+            var selectedDevice = devices[deviceNumber];
+
+            try
+            {
+                waveOutEvent = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, 0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing device: {ex.Message} (HRESULT: {ex.HResult})");
+            }
+        }
+
+
+
 
         public static void RespawnPlayer()
         {
@@ -286,7 +380,7 @@ namespace Game_Curs_Prog
             // Применение инерции к движению камеры по вертикали
             if (player.Y < cameraY + triggerThresholdY)
             {
-                cameraY -= (int)((cameraY + triggerThresholdY-1 - player.Y) * cameraInertiaY);
+                cameraY -= (int)((cameraY + triggerThresholdY+2 - player.Y) * cameraInertiaY);
             }
             else if (player.Y > cameraY + consoleHeight - triggerThresholdY)
             {
@@ -341,25 +435,41 @@ namespace Game_Curs_Prog
             cameraY = Math.Max(0, Math.Min(cameraY, 1000 - consoleHeight));
         }
 
-
         static char previousCameraMode = 'B'; // 'B' для базового режима, 'A' для продвинутого режима
-
-        static void UpdateHybridCamera(Hero player , int consoleWidth, int consoleHeight)
+        
+        static void UpdateHybridCamera(Hero player, int consoleWidth, int consoleHeight)
         {
+            if (player == null)
+            {
+                return;
+            }
+
             int triggerThresholdX = consoleWidth / 4; // Порог для реакции камеры по горизонтали ближе к середине
-            int triggerThresholdY = consoleHeight / 4; // Порог для реакции камеры по вертикали ближе к середине
+            int borderThreshold = 50; // Порог для границы карты
+
+            // Ограничение позиции камеры в пределах игрового поля
+            cameraX = Math.Max(0, Math.Min(cameraX, 1000 - consoleWidth));
+            cameraY = Math.Max(0, Math.Min(cameraY, 1000 - consoleHeight));
+
+            // Если персонаж рядом с границей карты, используем только Basic режим
+            if (cameraX < borderThreshold || cameraX > 1000 - consoleWidth - borderThreshold)
+            {
+                UpdateBasicCamera(player, consoleWidth, consoleHeight);
+                previousCameraMode = 'B';
+                return;
+            }
 
             // Проверка касания границы базового режима
             if (previousCameraMode == 'B')
             {
-                if (player.X < cameraX + triggerThresholdX || player.X > cameraX + consoleWidth - triggerThresholdX || player.Y < cameraY + triggerThresholdY || player.Y > cameraY + consoleHeight - triggerThresholdY)
+                if (player.X < cameraX + triggerThresholdX || player.X > cameraX + consoleWidth - triggerThresholdX)
                 {
                     previousCameraMode = 'A';
                     UpdateAdvancedCamera(consoleWidth, consoleHeight);
                 }
                 else
                 {
-                    UpdateBasicCamera(player ,consoleWidth, consoleHeight);
+                    UpdateBasicCamera(player, consoleWidth, consoleHeight);
                 }
             }
             else if (previousCameraMode == 'A')
@@ -376,12 +486,6 @@ namespace Game_Curs_Prog
                 }
             }
         }
-
-
-
-
-
-
 
 
         static void SendData(string message)
