@@ -8,6 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio.Core" Version="2.2.1" />
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
     <PackageReference Include="SFML.Audio" Version="2.6.0" />
     <PackageReference Include="SFML.Graphics" Version="2.6.0" />
     <PackageReference Include="SFML.Net" Version="2.6.0" />

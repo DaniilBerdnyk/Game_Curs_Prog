@@ -46,24 +46,6 @@ namespace Game_Curs_Prog
                 }
             }
 
-            // Заполнение буфера игровых объектов
-            foreach (var gameEntity in entities)
-            {
-                for (int y = 0; y < gameEntity.Height; y++)
-                {
-                    for (int x = 0; x < gameEntity.Width; x++)
-                    {
-                        int drawX = gameEntity.X - cameraX + x;
-                        int drawY = gameEntity.Y - cameraY + y;
-
-                        if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
-                        {
-                            objectFrame[drawX, drawY] = gameEntity.Symbol;
-                        }
-                    }
-                }
-            }
-
             // Заполнение буфера текстур
             foreach (var gameEntity in entities)
             {
@@ -76,8 +58,8 @@ namespace Game_Curs_Prog
                     if (texture.LoadImage(textureFilePath))
                     {
                         // Смещение текстуры относительно героя
-                        int offsetX = (texture.Width - gameEntity.Width) / 2 ; // Сдвиг на 1 символ вправо
-                        int offsetY = texture.Height - gameEntity.Height; // Сдвиг на 1 символ выше
+                        int offsetX = (texture.Width - gameEntity.Width) -1; // Сдвиг на 1 символ вправо
+                        int offsetY = texture.Height - gameEntity.Height -1; // Сдвиг на 1 символ выше
 
                         for (int y = 0; y < texture.Height; y++)
                         {
@@ -96,26 +78,41 @@ namespace Game_Curs_Prog
                 }
             }
 
+            // Заполнение буфера игровых объектов
+            foreach (var gameEntity in entities)
+            {
+                for (int y = 0; y < gameEntity.Height; y++)
+                {
+                    for (int x = 0; x < gameEntity.Width; x++)
+                    {
+                        int drawX = gameEntity.X - cameraX + x;
+                        int drawY = gameEntity.Y - cameraY + y;
+
+                        if (drawX >= 0 && drawX < consoleWidth && drawY >= 0 && drawY < consoleHeight)
+                        {
+                            objectFrame[drawX, drawY] = gameEntity.Symbol;
+                        }
+                    }
+                }
+            }
+
             // Комбинирование всех слоев в финальный буфер
             for (int y = 0; y < consoleHeight; y++)
             {
                 for (int x = 0; x < consoleWidth; x++)
                 {
+                    frameBuffer[x, y] = parallaxBackground[x, y]; // Сначала фон
+                    if (objectFrame[x, y] != '\0')
+                    {
+                        frameBuffer[x, y] = objectFrame[x, y]; // Затем игровые объекты
+                    }
+                    if (textureFrame[x, y] != '\0')
+                    {
+                        frameBuffer[x, y] = textureFrame[x, y]; // Потом текстуры
+                    }
                     if (visualFrame[x, y] != '\0')
                     {
-                        frameBuffer[x, y] = visualFrame[x, y];
-                    }
-                    else if (textureFrame[x, y] != '\0')
-                    {
-                        frameBuffer[x, y] = textureFrame[x, y];
-                    }
-                    else if (objectFrame[x, y] != '\0')
-                    {
-                        frameBuffer[x, y] = objectFrame[x, y];
-                    }
-                    else
-                    {
-                        frameBuffer[x, y] = parallaxBackground[x, y]; // Оставляем фон как есть
+                        frameBuffer[x, y] = visualFrame[x, y]; // И в конце визуальные объекты
                     }
                 }
             }
@@ -152,8 +149,6 @@ namespace Game_Curs_Prog
         }
     }
 }
-
-
 
 
 
