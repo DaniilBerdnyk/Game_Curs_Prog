@@ -248,7 +248,7 @@ namespace Game_Curs_Prog
                     UpdateBasicCamera(player, consoleWidth, consoleHeight);
                     break;
                 case Global.CameraMode.Advanced:
-                    UpdateAdvancedCamera(player , consoleWidth, consoleHeight);
+                    UpdateAdvancedCamera(consoleWidth, consoleHeight);
                     break;
                 case Global.CameraMode.Hybrid:
                     UpdateHybridCamera(player, consoleWidth, consoleHeight);
@@ -301,41 +301,39 @@ namespace Game_Curs_Prog
 
 
 
-        static void UpdateAdvancedCamera(Hero player, int consoleWidth, int consoleHeight)
+        static void UpdateAdvancedCamera(int consoleWidth, int consoleHeight)
         {
-            if (player == null)
-            {
-                return;
-            }
+            const double cameraInertia = 0.05; // Коэффициент инерции камеры
+            const double followSpeed = 0.05; // Скорость следования камеры за персонажем
+            const double overtakeSpeed = 0.02; // Скорость обгона камеры
+            int centerX = consoleWidth / 4; // Центр экрана по горизонтали
+            int centerY = consoleHeight / 4; // Центр экрана по вертикали
 
-            const double cameraInertiaX = 1; // Коэффициент инерции камеры по горизонтали
-            const double cameraInertiaY = 0.3; // Коэффициент инерции камеры по вертикали
-            int triggerThresholdX = consoleWidth / 3; // Порог для реакции камеры по горизонтали
-            int triggerThresholdY = consoleHeight / 3; // Порог для реакции камеры по вертикали
-            int verticalOffset = 2; // Смещение на 2 символа вниз
+            // Получение скорости персонажа из класса Hero
+            double playerSpeed = Hero.speed;
 
             // Цель позиции камеры
-            int targetCameraX = player.X - consoleWidth / 2;
-            int targetCameraY = player.Y - consoleHeight / 2;
+            int targetCameraX = player.X - centerX;
+            int targetCameraY = player.Y - centerY;
 
-            // Применение инерции к движению камеры по горизонтали
-            if (player.X < cameraX + triggerThresholdX)
+            // Применение инерции к движению камеры
+            cameraX += (int)((targetCameraX - cameraX) * cameraInertia);
+            cameraY += (int)((targetCameraY - cameraY) * cameraInertia);
+
+            // Плавное следование камеры за персонажем
+            if (Controls.IsKeyPressed(ConsoleKey.A) || Controls.IsKeyPressed(ConsoleKey.D))
             {
-                cameraX -= (int)((cameraX + triggerThresholdX - player.X) * cameraInertiaX);
-            }
-            else if (player.X > cameraX + consoleWidth - triggerThresholdX)
-            {
-                cameraX += (int)((player.X - (cameraX + consoleWidth - triggerThresholdX)) * cameraInertiaX);
+                cameraX += (int)((targetCameraX - cameraX) * followSpeed);
             }
 
-            // Применение инерции к движению камеры по вертикали
-            if (player.Y < cameraY + triggerThresholdY)
+            // Плавный обгон камеры при длительном движении в одном направлении
+            if (Controls.IsKeyPressed(ConsoleKey.A))
             {
-                cameraY -= (int)((cameraY + triggerThresholdY - player.Y) * cameraInertiaY);
+                cameraX -= (int)(overtakeSpeed * consoleWidth);
             }
-            else if (player.Y > cameraY + consoleHeight - triggerThresholdY)
+            else if (Controls.IsKeyPressed(ConsoleKey.D))
             {
-                cameraY += (int)((player.Y - (cameraY + consoleHeight - triggerThresholdY)) * cameraInertiaY);
+                cameraX += (int)(overtakeSpeed * consoleWidth);
             }
 
             // Ограничение позиции камеры в пределах игрового поля
@@ -355,17 +353,15 @@ namespace Game_Curs_Prog
 
             const double cameraInertiaX = 0.05; // Коэффициент инерции камеры по горизонтали
             const double cameraInertiaY = 0.3; // Коэффициент инерции камеры по вертикали
-            int triggerThresholdX = consoleWidth / 2; // Порог для реакции камеры по горизонтали
-            int triggerThresholdY = consoleHeight / 2; // Порог для реакции камеры по вертикали
-           
+            int triggerThresholdX = consoleWidth; // Порог для реакции камеры по горизонтали
+            int triggerThresholdY = consoleHeight; // Порог для реакции камеры по вертикали
 
-            // Проверка Advanced режима
+            // Если предыдущий режим был Advanced, проверяем, нажаты ли клавиши для продолжения использования Advanced
             if (previousCameraMode == 'A')
             {
-                // Продолжаем использовать Advanced режим, если удерживаются клавиши движения
                 if (Controls.IsKeyPressed(ConsoleKey.A) || Controls.IsKeyPressed(ConsoleKey.D))
                 {
-                    UpdateAdvancedCamera(player, consoleWidth, consoleHeight);
+                    UpdateAdvancedCamera(consoleWidth, consoleHeight);
                 }
                 else
                 {
@@ -373,14 +369,14 @@ namespace Game_Curs_Prog
                     UpdateBasicCamera(player, consoleWidth, consoleHeight);
                 }
             }
+            // Если предыдущий режим был Basic, проверяем условия для перехода в Advanced
             else if (previousCameraMode == 'B')
             {
-                // Проверка на активацию Advanced режима
                 if (player.X < cameraX + triggerThresholdX || player.X > cameraX + consoleWidth - triggerThresholdX ||
                     player.Y < cameraY + triggerThresholdY || player.Y > cameraY + consoleHeight - triggerThresholdY)
                 {
                     previousCameraMode = 'A';
-                    UpdateAdvancedCamera(player, consoleWidth, consoleHeight);
+                    UpdateAdvancedCamera(consoleWidth, consoleHeight);
                 }
                 else
                 {
@@ -388,6 +384,7 @@ namespace Game_Curs_Prog
                 }
             }
         }
+
 
 
 
