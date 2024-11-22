@@ -59,6 +59,14 @@ namespace Game_Curs_Prog
         public static string audioDirectoryPath;
         public static List<string> audioFiles;
         public static int currentTrackIndex = 0;
+        // Пути к текстурам
+        public static string heroTexturePath;
+        public static string enemyTexturePath;
+        public static string visualEntityTexturePath;
+        // Текстуры
+        public static Texture heroTexture;
+        public static Texture enemyTexture; 
+        public static Texture visualEntityTexture;
 
         // Создаем объекты вне методов
         public static WasapiOut waveOutEvent; // для воспроизведения аудио
@@ -69,6 +77,16 @@ namespace Game_Curs_Prog
             string projectDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
             backgroundFilePath = Path.Combine(projectDirectory, "Backgrounds", "background.txt");
             audioDirectoryPath = Path.Combine(projectDirectory, "Music");
+
+            // Пути к текстурам
+            string heroTexturePath = Path.Combine(projectDirectory, "Textures", "hero.txt");
+            string enemyTexturePath = Path.Combine(projectDirectory, "Textures", "enemy.txt");
+            string visualEntityTexturePath = Path.Combine(projectDirectory, "Textures", "visualEntity.txt");
+
+            // Загрузка текстур
+            heroTexture = new Texture(heroTexturePath, ' ', 10, 10);
+            enemyTexture = new Texture(enemyTexturePath, ' ', 10, 10);
+            visualEntityTexture = new Texture(visualEntityTexturePath, ' ', 10, 10);
 
             // Загрузите и используйте файлы с использованием этих путей
             if (File.Exists(backgroundFilePath))
@@ -100,6 +118,7 @@ namespace Game_Curs_Prog
                 Console.WriteLine($"Directory not found: {audioDirectoryPath}");
             }
         }
+
 
 
         static void Main(string[] args)

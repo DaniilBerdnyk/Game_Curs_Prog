@@ -14,9 +14,9 @@ namespace Game_Curs_Prog
 
         public static Dictionary<Type, string> TypeTextureMapping = new Dictionary<Type, string>
         {
-            { typeof(Hero), "hero.txt" },
-            { typeof(Enemy), "enemy.txt" },
-            { typeof(VisualEntity), "visualEntity.txt" }
+            { typeof(Hero), "Textures/hero.txt" },
+            { typeof(Enemy), "Textures/enemy.txt" },
+            { typeof(VisualEntity), "Textures/visualEntity.txt" }
         };
 
         public Texture(string filePath, char defaultSymbol, int width, int height)
@@ -95,6 +95,7 @@ namespace Game_Curs_Prog
         }
     }
 }
+
 
 
 
