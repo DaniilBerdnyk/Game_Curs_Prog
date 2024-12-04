@@ -49,17 +49,16 @@ namespace Game_Curs_Prog
             // Заполнение буфера текстур
             foreach (var gameEntity in entities)
             {
-                if (Texture.TypeTextureMapping.ContainsKey(gameEntity.GetType()))
+                if (gameEntity is Hero hero)
                 {
-                    string textureFilePath = Texture.TypeTextureMapping[gameEntity.GetType()];
-                    Texture texture = new Texture(textureFilePath, ' ', gameEntity.Width, gameEntity.Height);
+                    Texture texture = hero.GetCurrentTexture(); // Получаем текущую текстуру для героя
 
-                    // Проверка успешности загрузки текстуры
-                    if (texture.LoadImage(textureFilePath))
+                    // Проверка успешности загрузки текстуры и null
+                    if (texture != null && texture.Image != null)
                     {
                         // Смещение текстуры относительно героя
-                        int offsetX = (texture.Width - gameEntity.Width) -1; // Сдвиг на 1 символ вправо
-                        int offsetY = texture.Height - gameEntity.Height -1; // Сдвиг на 1 символ выше
+                        int offsetX = (texture.Width - gameEntity.Width) / 2; // Центрируем текстуру по горизонтали
+                        int offsetY = (texture.Height - gameEntity.Height) / 2; // Центрируем текстуру по вертикали
 
                         for (int y = 0; y < texture.Height; y++)
                         {
@@ -74,6 +73,11 @@ namespace Game_Curs_Prog
                                 }
                             }
                         }
+                    }
+                    else
+                    {
+                        // Отладочный вывод для случая, если текстура не загружена
+                        Console.WriteLine($"Texture not loaded for hero.");
                     }
                 }
             }
@@ -120,6 +124,8 @@ namespace Game_Curs_Prog
             RenderFinalFrame(frameBuffer, consoleWidth, consoleHeight);
         }
 
+
+
         public static void RenderFinalFrame(char[,] frame, int width, int height)
         {
             var sb = new StringBuilder();
@@ -143,59 +149,10 @@ namespace Game_Curs_Prog
             Thread.Sleep(Delay); // Задержка для плавности
         }
 
+
         public static void ClearScreen()
         {
             Console.Clear();
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

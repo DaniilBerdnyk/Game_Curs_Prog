@@ -9,7 +9,7 @@ namespace Game_Curs_Prog
         public char[,] Image { get; private set; }
         public int Width { get; private set; }
         public int Height { get; private set; }
-        private string currentFilePath;
+        public string currentFilePath;
         private char defaultSymbol;
 
         public static Dictionary<Type, string> TypeTextureMapping = new Dictionary<Type, string>
@@ -24,12 +24,7 @@ namespace Game_Curs_Prog
             this.defaultSymbol = defaultSymbol;
             Width = width;
             Height = height;
-
-            // Попробуем загрузить текстуру, если не удастся, назначим дефолтную текстуру
-            if (!LoadImage(filePath))
-            {
-                SetDefaultImage();
-            }
+            LoadImage(filePath);
         }
 
         public bool LoadImage(string filePath)
@@ -82,7 +77,7 @@ namespace Game_Curs_Prog
             return false; // Файл не найден
         }
 
-        private void SetDefaultImage()
+        public void SetDefaultImage()
         {
             Image = new char[Width, Height];
             for (int y = 0; y < Height; y++)
@@ -95,9 +90,4 @@ namespace Game_Curs_Prog
         }
     }
 }
-
-
-
-
-
 
