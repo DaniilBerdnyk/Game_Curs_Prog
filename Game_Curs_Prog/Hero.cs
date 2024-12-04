@@ -1,5 +1,4 @@
-﻿using SFML.Graphics;
-
+﻿
 namespace Game_Curs_Prog
 {
     public class Hero : Entity

@@ -249,7 +249,7 @@ namespace Game_Curs_Prog
             if (player != null)
             {
                 player.X = 2;
-                player.Y = defaultHeight - 5;
+                player.Y = defaultHeight - 8;
                 player.IsJumping = false;
                 player.CanJump = true;
                 FinalRenderer.Draw(consoleWidth , consoleHeight , entities, visualEntities, teammates, background, cameraX, cameraY, 0.5);
@@ -422,9 +422,6 @@ namespace Game_Curs_Prog
             int centerX = consoleWidth / 4; // Центр экрана по горизонтали
             int centerY = consoleHeight / 4; // Центр экрана по вертикали
 
-            // Получение скорости персонажа из класса Hero
-            double playerSpeed = Hero.speed;
-
             // Цель позиции камеры
             int targetCameraX = player.X - centerX;
             int targetCameraY = player.Y - centerY;
@@ -453,6 +450,7 @@ namespace Game_Curs_Prog
             cameraX = Math.Max(0, Math.Min(cameraX, 1000 - consoleWidth));
             cameraY = Math.Max(0, Math.Min(cameraY, 1000 - consoleHeight));
         }
+
 
         static char previousCameraMode = 'B'; // 'B' для базового режима, 'A' для продвинутого режима
         
