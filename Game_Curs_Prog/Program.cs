@@ -105,7 +105,7 @@ namespace Game_Curs_Prog
                     Console.WriteLine($"Loading track: {audioFiles[currentTrackIndex]}");
                     audioFile = new AudioFileReader(audioFiles[currentTrackIndex]);
                     waveOutEvent.Init(audioFile);
-                    waveOutEvent.Volume = 0.5f; // Установите громкость (0.0 - без звука, 1.0 - максимум)
+                    waveOutEvent.Volume = 0.2f; // Установите громкость (0.0 - без звука, 1.0 - максимум)
                     waveOutEvent.PlaybackStopped += OnPlaybackStopped;
                 }
                 else
