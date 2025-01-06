@@ -39,7 +39,6 @@ using System.Collections.Generic;
             public DateTime lastMoveTime { get; private set; } // Время последнего движения
             public DateTime lastJumpMoveTime { get; private set; } // Время последнего движения в прыжке
             public string lastMoveDirection { get; private set; } // Направление последнего движения
-
             public Hero(int x, int y, int width, int height, char symbol) : base(x, y, width, height, symbol)
             {
                 JumpHeight = MaxJumpHeight;

@@ -8,31 +8,32 @@ using System.Threading.Tasks;
 
 public class Server
 {
-    private static TcpListener listener;
-    private static List<TcpClient> players = new List<TcpClient>();
-    private static int playerIdCounter = 1;
+    private TcpListener listener;
+    private List<TcpClient> players = new List<TcpClient>();
+    private int playerIdCounter = 1;
+    private SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
-    public static async Task Main()
-    {
-        await StartServerAsync();
-    }
-
-    public static async Task StartServerAsync()
+    public async Task StartServerAsync()
     {
         listener = new TcpListener(IPAddress.Any, 8000);
         listener.Start();
         Console.WriteLine("Server started on port 8000...");
 
-        _ = Task.Run(NetworkDiscovery.StartServerDiscoveryAsync);
+        _ = Task.Run(NetworkDiscovery.StartHostDiscoveryAsync);
 
         while (true)
         {
             try
             {
                 TcpClient player = await listener.AcceptTcpClientAsync();
-                lock (players)
+                await semaphore.WaitAsync();
+                try
                 {
                     players.Add(player);
+                }
+                finally
+                {
+                    semaphore.Release();
                 }
                 Console.WriteLine($"Player {playerIdCounter} connected.");
                 _ = Task.Run(() => HandlePlayerAsync(player, playerIdCounter));
@@ -45,7 +46,7 @@ public class Server
         }
     }
 
-    private static async Task HandlePlayerAsync(TcpClient player, int playerId)
+    private async Task HandlePlayerAsync(TcpClient player, int playerId)
     {
         try
         {
@@ -56,7 +57,8 @@ public class Server
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
                 if (bytesRead == 0) break;
 
-                lock (players)
+                await semaphore.WaitAsync();
+                try
                 {
                     foreach (var otherPlayer in players)
                     {
@@ -66,6 +68,10 @@ public class Server
                         }
                     }
                 }
+                finally
+                {
+                    semaphore.Release();
+                }
             }
         }
         catch (SocketException ex)
@@ -74,9 +80,14 @@ public class Server
         }
         finally
         {
-            lock (players)
+            await semaphore.WaitAsync();
+            try
             {
                 players.Remove(player);
+            }
+            finally
+            {
+                semaphore.Release();
             }
             player?.Close();
             Console.WriteLine($"Player {playerId} disconnected.");

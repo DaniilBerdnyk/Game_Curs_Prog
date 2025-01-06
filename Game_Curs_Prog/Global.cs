@@ -15,8 +15,7 @@
     public const int consoleWidth = 120;
     public const int consoleHeight = 20;
 
-    public const int defaultWidth = 500;
+    public const int defaultWidth = 250;
     public const int defaultHeight = 250;
 
-  
 }

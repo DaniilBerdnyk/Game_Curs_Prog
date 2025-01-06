@@ -5,30 +5,16 @@ using System.Threading.Tasks;
 
 public class Client
 {
-    private static TcpClient client;
-    private static NetworkStream stream;
+    private TcpClient client;
+    private NetworkStream stream;
 
-    public static async Task Main()
-    {
-        var serverIp = await NetworkDiscovery.DiscoverServerAsync();
-
-        if (serverIp == null)
-        {
-            Console.WriteLine("No server found. Please start the server first.");
-            return;
-        }
-
-        Console.WriteLine($"Server found at {serverIp}. Starting as client...");
-        await StartClientAsync(serverIp.ToString());
-    }
-
-    private static async Task StartClientAsync(string serverIp)
+    public async Task StartClientAsync(string hostIp)
     {
         try
         {
-            client = new TcpClient(serverIp, 8000);
+            client = new TcpClient(hostIp, 8000);
             stream = client.GetStream();
-            Console.WriteLine("Connected to the server.");
+            Console.WriteLine("Connected to the host.");
 
             _ = Task.Run(ReceiveDataAsync);
 
@@ -43,11 +29,11 @@ public class Client
         }
         catch (SocketException ex)
         {
-            Console.WriteLine($"Could not connect to server: {ex.Message}");
+            Console.WriteLine($"Could not connect to host: {ex.Message}");
         }
     }
 
-    private static async Task ReceiveDataAsync()
+    private async Task ReceiveDataAsync()
     {
         try
         {

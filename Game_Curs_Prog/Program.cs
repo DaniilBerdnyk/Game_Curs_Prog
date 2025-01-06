@@ -33,7 +33,7 @@ namespace Game_Curs_Prog
         static StaticEntity Platform4 = new StaticEntity(40, defaultHeight - 20, 10, 2, '#'); // Платформа выше земли
 
         static StaticEntity topWall = new StaticEntity(1, 0, defaultWidth, 1, '▄'); // Изменяем ширину на 500
-        static StaticEntity bottomWall = new StaticEntity(0, defaultHeight - 2, defaultWidth, 1, '▄'); // Нижняя граница
+        static StaticEntity bottomWall = new StaticEntity(0, defaultHeight - 2, defaultWidth, 2, '▄'); // Нижняя граница
         static StaticEntity leftWall = new StaticEntity(0, 0, 1, defaultHeight, ' '); // Изменяем высоту на 500
         static StaticEntity rightWall = new StaticEntity(defaultWidth - 1, 0, 1, defaultHeight, ' '); // Изменяем позицию и высоту
         static StaticEntity ground = new StaticEntity(0, defaultHeight - 2, defaultWidth, 1, '▀'); // Изменяем позицию и ширину
