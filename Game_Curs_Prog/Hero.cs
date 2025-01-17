@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Text;
 
    namespace Game_Curs_Prog
     {
@@ -73,19 +75,23 @@ using System.Collections.Generic;
                 string filePath = $"{basePath}{i}.txt";
                 textures.Add(new Texture(filePath, defaultSymbol, width, height));
                 // Отладочный вывод для проверки загрузки текстур
-                Console.WriteLine($"Texture loaded: {filePath}");
+#if DEBUG
+        Console.WriteLine($"Texture loaded: {filePath}");
+#endif
             }
             return textures;
         }
-
 
         private void UpdateTexture()
         {
             string texturePath = textures[State][currentFrame].currentFilePath;
             textures[State][currentFrame].LoadImage(texturePath);
             // Отладочный вывод для проверки обновления текстуры
-            Console.WriteLine($"Texture updated: {texturePath}");
+#if DEBUG
+    Console.WriteLine($"Texture updated: {texturePath}");
+#endif
         }
+
 
         public void SetDirection(string direction)
             {
@@ -158,22 +164,28 @@ using System.Collections.Generic;
                 StartAnimation(); // Запуск анимации при смене состояния
 
                 // Отладочный вывод для проверки смены состояния
-                Console.WriteLine($"State updated to: {State}");
+#if DEBUG
+        Console.WriteLine($"State updated to: {State}");
+#endif
             }
             else
             {
                 // Отладочный вывод для случая, если состояние не найдено
-                Console.WriteLine($"State not found: {stateWithDirection}");
+#if DEBUG
+        Console.WriteLine($"State not found: {stateWithDirection}");
+#endif
             }
         }
-
 
         public Texture GetCurrentTexture()
         {
             // Отладочный вывод для проверки текущего состояния и кадра
-            Console.WriteLine($"Getting texture for state: {State}, frame: {currentFrame}");
+#if DEBUG
+    Console.WriteLine($"Getting texture for state: {State}, frame: {currentFrame}");
+#endif
             return textures[State][currentFrame];
         }
+
 
 
 
@@ -420,6 +432,7 @@ using System.Collections.Generic;
                    projectedY < entity.Y + entity.Height &&
                    projectedY + Height > entity.Y;
         }
-
     }
+
 }
+

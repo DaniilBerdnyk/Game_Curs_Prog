@@ -56,13 +56,6 @@
       <FileName>Enemy.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="Game_Curs_Prog.Entity" Collapsed="true">
-    <Position X="12.25" Y="1.5" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAABAAAAAAQAAAAAEACAAAQAAIAAAAAAAIAaAA=</HashCode>
-      <FileName>Entity.cs</FileName>
-    </TypeIdentifier>
-  </Class>
   <Class Name="Game_Curs_Prog.FinalRenderer" Collapsed="true">
     <Position X="9.25" Y="2.5" Width="1.5" />
     <TypeIdentifier>
@@ -131,6 +124,13 @@
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAQAAAAAAACAAAQAAIAAAAAAAIAAAA=</HashCode>
       <FileName>VisualEntity.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Game_Curs_Prog.Entity" Collapsed="true">
+    <Position X="12.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAABAAAAAAQAAAAAEACAAAQAAIAAAAAAAIAaAA=</HashCode>
+      <FileName>Entity.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Font Name="Segoe UI" Size="9" />

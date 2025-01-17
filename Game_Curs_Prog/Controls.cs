@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using NAudio;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,7 +69,7 @@ namespace Game_Curs_Prog
                         player.UpdateState("idle");
                     }
 
-                    if (IsKeyPressed(ConsoleKey.R))
+                    if (IsKeyPressed(ConsoleKey.T))
                     {
                         Global.currentCameraMode = (Global.CameraMode)(((int)Global.currentCameraMode + 1) % Enum.GetNames(typeof(Global.CameraMode)).Length);
                         Console.WriteLine($"Switched Camera Mode to: {Global.currentCameraMode}");
@@ -90,13 +91,13 @@ namespace Game_Curs_Prog
 
                 if (IsKeyPressed(ConsoleKey.UpArrow)) // Увеличение громкости
                 {
-                    MusicPlayer.IncreaseVolume();
+                    Program.IncreaseVolume();
                     Thread.Sleep(200); // Небольшая задержка для предотвращения многократного срабатывания переключения
                 }
 
                 if (IsKeyPressed(ConsoleKey.DownArrow)) // Уменьшение громкости
                 {
-                    MusicPlayer.DecreaseVolume();
+                    Program.DecreaseVolume();
                     Thread.Sleep(200); // Небольшая задержка для предотвращения многократного срабатывания переключения
                 }
 
@@ -150,7 +151,9 @@ namespace Game_Curs_Prog
                 Program.waveOutEvent = new WasapiOut();
                 Program.waveOutEvent.Init(Program.audioFile); // Инициализируем воспроизведение
                 Program.PlayBackgroundMusic(); // Начинаем воспроизведение
+#if DEBUG
                 Console.WriteLine($"Playing next track: {Program.audioFiles[Program.currentTrackIndex]}");
+#endif
             }
         }
 
@@ -167,27 +170,12 @@ namespace Game_Curs_Prog
                 Program.waveOutEvent = new WasapiOut();
                 Program.waveOutEvent.Init(Program.audioFile); // Инициализируем воспроизведение
                 Program.PlayBackgroundMusic(); // Начинаем воспроизведение
+#if DEBUG
                 Console.WriteLine($"Playing previous track: {Program.audioFiles[Program.currentTrackIndex]}");
+#endif
             }
         }
-
-        public static void IncreaseVolume()
-        {
-            if (Program.waveOutEvent != null)
-            {
-                Program.waveOutEvent.Volume = Math.Min(1.0f, Program.waveOutEvent.Volume + 0.1f); // Увеличиваем громкость на 10%
-                Console.WriteLine($"Volume increased to: {Program.waveOutEvent.Volume}");
-            }
-        }
-
-        public static void DecreaseVolume()
-        {
-            if (Program.waveOutEvent != null)
-            {
-                Program.waveOutEvent.Volume = Math.Max(0.0f, Program.waveOutEvent.Volume - 0.1f); // Уменьшаем громкость на 10%
-                Console.WriteLine($"Volume decreased to: {Program.waveOutEvent.Volume}");
-            }
-        }
+        
     }
 }
 

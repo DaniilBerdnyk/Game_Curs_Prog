@@ -22,10 +22,11 @@ namespace Game_Curs_Prog
             if (entity is Hero hero)
             {
                 // Проверка всех клавиш и вызов соответствующих методов
-                if (Controls.IsKeyPressed(ConsoleKey.W))
+                if (Controls.IsKeyPressed(ConsoleKey.W) || Controls.IsKeyPressed(ConsoleKey.Spacebar))
                 {
                     hero.Jump(entities);
                     Controls.ResetKey(ConsoleKey.W);
+                    Controls.ResetKey(ConsoleKey.Spacebar);
                 }
                 if (Controls.IsKeyPressed(ConsoleKey.S))
                 {

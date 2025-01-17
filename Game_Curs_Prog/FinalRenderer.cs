@@ -17,7 +17,7 @@ namespace Game_Curs_Prog
             char[,] textureFrame = new char[consoleWidth, consoleHeight];
 
             // Генерация фона с параллаксом
-            char[,] parallaxBackground = background.GenerateParallaxBackground(1000, 40, cameraX, cameraY, parallaxFactor);
+            char[,] parallaxBackground = background.GenerateParallaxBackground(consoleWidth, consoleHeight, cameraX, cameraY, parallaxFactor);
 
             // Заполнение буфера фона
             for (int y = 0; y < consoleHeight; y++)
@@ -76,9 +76,12 @@ namespace Game_Curs_Prog
                     }
                     else
                     {
-                        // Отладочный вывод для случая, если текстура не загружена
-                        Console.WriteLine($"Texture not loaded for hero.");
+#if DEBUG
+    // Отладочный вывод для случая, если текстура не загружена
+    Console.WriteLine($"Texture not loaded for hero.");
+#endif
                     }
+                                                              
                 }
             }
 
