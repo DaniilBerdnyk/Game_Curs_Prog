@@ -8,8 +8,8 @@ public static class Global
     {
         Basic,
         Advanced,
-        Hybrid,
-        Static
+        Hybrid
+ 
     }
 
     public static CameraMode currentCameraMode = CameraMode.Hybrid;

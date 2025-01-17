@@ -14,32 +14,35 @@ namespace Game_Curs_Prog
         private static extern short GetAsyncKeyState(int vKey);
 
         private static readonly Dictionary<ConsoleKey, int> keyMappings = new Dictionary<ConsoleKey, int>
-        {
-            { ConsoleKey.W, 0x57 },
-            { ConsoleKey.S, 0x53 },
-            { ConsoleKey.A, 0x41 },
-            { ConsoleKey.D, 0x44 },
-            { ConsoleKey.R, 0x52 },
-            { ConsoleKey.LeftArrow, 0x25 },  // Для предыдущего трека
-            { ConsoleKey.RightArrow, 0x27 }, // Для следующего трека
-            { ConsoleKey.UpArrow, 0x26 },    // Для увеличения громкости
-            { ConsoleKey.DownArrow, 0x28 },  // Для уменьшения громкости
-            { ConsoleKey.Escape, 0x1B }
+{
+    { ConsoleKey.W, 0x57 },
+    { ConsoleKey.S, 0x53 },
+    { ConsoleKey.A, 0x41 },
+    { ConsoleKey.D, 0x44 },
+    { ConsoleKey.R, 0x52 },
+    { ConsoleKey.LeftArrow, 0x25 },  // Для предыдущего трека
+    { ConsoleKey.RightArrow, 0x27 }, // Для следующего трека
+    { ConsoleKey.UpArrow, 0x26 },    // Для увеличения громкости
+    { ConsoleKey.DownArrow, 0x28 },  // Для уменьшения громкости
+    { ConsoleKey.Escape, 0x1B },
+    { ConsoleKey.T, 0x54 }           // Добавляем клавишу T
         };
 
         private static readonly Dictionary<ConsoleKey, bool> keyStates = new Dictionary<ConsoleKey, bool>
-        {
-            { ConsoleKey.W, false },
-            { ConsoleKey.S, false },
-            { ConsoleKey.A, false },
-            { ConsoleKey.D, false },
-            { ConsoleKey.R, false },
-            { ConsoleKey.LeftArrow, false },
-            { ConsoleKey.RightArrow, false },
-            { ConsoleKey.UpArrow, false },
-            { ConsoleKey.DownArrow, false },
-            { ConsoleKey.Escape, false }
+{
+    { ConsoleKey.W, false },
+    { ConsoleKey.S, false },
+    { ConsoleKey.A, false },
+    { ConsoleKey.D, false },
+    { ConsoleKey.R, false },
+    { ConsoleKey.LeftArrow, false },
+    { ConsoleKey.RightArrow, false },
+    { ConsoleKey.UpArrow, false },
+    { ConsoleKey.DownArrow, false },
+    { ConsoleKey.Escape, false },
+    { ConsoleKey.T, false }           // Добавляем клавишу T
         };
+
 
         public static void StartKeyChecking(int framesPerSecond, List<Entity> entities)
         {

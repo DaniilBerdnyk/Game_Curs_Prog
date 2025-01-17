@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using NAudio.Wave.SampleProviders;
 using System.Numerics;
+using System.Collections;
 
 //SAVE NOTE
 namespace Game_Curs_Prog
@@ -108,7 +109,9 @@ namespace Game_Curs_Prog
 
                 if (audioFiles.Count > 0)
                 {
+#if DEBUG
                     Console.WriteLine($"Loading track: {audioFiles[currentTrackIndex]}");
+#endif
                     audioFile = new AudioFileReader(audioFiles[currentTrackIndex]);
                     VolumeSampleProvider volumeProvider = new VolumeSampleProvider(audioFile) { Volume = 0.2f }; // Установите громкость (0.0 - без звука, 1.0 - максимум)
                     waveOutEvent.Init(volumeProvider);
@@ -652,7 +655,9 @@ namespace Game_Curs_Prog
                 if (audioFiles != null && audioFiles.Count > 0)
                 {
                     currentTrackIndex = (currentTrackIndex + 1) % audioFiles.Count;
+#if DEBUG
                     Console.WriteLine($"Loading track: {audioFiles[currentTrackIndex]}");
+#endif
 
                     audioFile.Dispose();
                     audioFile = new AudioFileReader(audioFiles[currentTrackIndex]);
@@ -801,43 +806,22 @@ namespace Game_Curs_Prog
         }
 
 
+
+
     enum CameraMode
     {
         Basic,
         Advanced,
-        Hybrid,
-        Static
+        Hybrid
     }
 
     static CameraMode currentCameraMode = CameraMode.Hybrid; // Для отладки используем только Basic
 
     static DateTime lastMovementTime = DateTime.Now;
     static bool isMoving = false;
-    static Timer movementTimer;
 
     static int targetCameraX;
-    static int targetCameraY;
-    static int additionalOffsetY = 0; // Переменная для дополнительного смещения по Y
-
-    static void InitializeMovementTimer()
-    {
-        movementTimer = new Timer(CheckForMovement, null, 0, 1000); // Проверка каждые 1 секунду
-    }
-
-    static void CheckForMovement(object state)
-    {
-        if (!isMoving && (DateTime.Now - lastMovementTime).TotalSeconds >= 3)
-        {
-            // Плавно смещаем таргет поинт вверх
-            additionalOffsetY = Math.Min(additionalOffsetY + 1, 50); // Ограничим смещение 50 символами
-        }
-        else
-        {
-            additionalOffsetY = 0; // Сбрасываем смещение
-        }
-
-        isMoving = false; // Сброс движения для следующей проверки
-    }
+    static int targetCameraY; 
 
     static void UpdateCamera(Hero player, int consoleWidth, int consoleHeight)
     {
@@ -851,6 +835,10 @@ namespace Game_Curs_Prog
         {
             isMoving = true;
             lastMovementTime = DateTime.Now;
+        }
+        else
+        {
+            isMoving = false; 
         }
 
         // Обновление камеры в зависимости от текущего режима
@@ -906,69 +894,96 @@ namespace Game_Curs_Prog
 
         // Ограничение позиции камеры в пределах игрового поля
         cameraX = Math.Max(0, Math.Min(cameraX, Global.defaultWidth));
-        cameraY = Math.Max(0, Math.Min(cameraY, Global.defaultHeight-consoleHeight-1));
+        cameraY = Math.Max(0, Math.Min(cameraY, Global.defaultHeight - consoleHeight - 1));
     }
 
-    static void UpdateAdvancedCamera(int consoleWidth, int consoleHeight)
-    {
-        const double cameraInertia = 0.05; // Коэффициент инерции камеры
-        const double followSpeed = 0.05; // Скорость следования камеры за персонажем
-        const double overtakeSpeed = 0.02; // Скорость обгона камеры
-        int centerX = consoleWidth / 4; // Центр экрана по горизонтали
-        int centerY = consoleHeight / 4; // Центр экрана по вертикали
-
-        // Цель позиции камеры
-        targetCameraX = player.X - centerX;
-        targetCameraY = player.Y - centerY; 
-
-        // Применение инерции к движению камеры
-        cameraX += (int)((targetCameraX - cameraX) * cameraInertia);
-        cameraY += (int)((targetCameraY - cameraY) * cameraInertia);
-
-        // Плавное следование камеры за персонажем
-        if (Controls.IsKeyPressed(ConsoleKey.A) || Controls.IsKeyPressed(ConsoleKey.D))
+        static void UpdateAdvancedCamera(int consoleWidth, int consoleHeight)
         {
-            cameraX += (int)((targetCameraX - cameraX) * followSpeed);
+            if (player == null)
+            {
+                return;
+            }
+
+            const double cameraInertiaX = 0.05; // Коэффициент инерции камеры по горизонтали
+            const double cameraInertiaY = 0.3; // Коэффициент инерции камеры по вертикали
+            const double followSpeed = 0.05; // Скорость следования камеры за персонажем
+            const double overtakeSpeed = 0.02; // Скорость обгона камеры
+            int centerX = consoleWidth / 4; // Центр экрана по горизонтали
+            int centerY = consoleHeight / 2; // Центр экрана по вертикали
+
+            // Цель позиции камеры
+            targetCameraX = player.X - centerX;
+            targetCameraY = player.Y - centerY;
+
+            // Применение инерции к движению камеры по горизонтали
+            cameraX += (int)((targetCameraX - cameraX) * cameraInertiaX);
+
+            // Плавное следование камеры за персонажем
+            if (Controls.IsKeyPressed(ConsoleKey.A) || Controls.IsKeyPressed(ConsoleKey.D))
+            {
+                cameraX += (int)((targetCameraX - cameraX) * followSpeed);
+            }
+
+            // Плавный обгон камеры при длительном движении в одном направлении
+            if (Controls.IsKeyPressed(ConsoleKey.A))
+            {
+                cameraX -= (int)(overtakeSpeed * consoleWidth);
+            }
+            else if (Controls.IsKeyPressed(ConsoleKey.D))
+            {
+                cameraX += (int)(overtakeSpeed * consoleWidth);
+            }
+
+            // Применение инерции к движению камеры по вертикали
+            cameraY += (int)((targetCameraY - cameraY) * cameraInertiaY);
+
+            // Плавное следование камеры за персонажем
+            if (Controls.IsKeyPressed(ConsoleKey.W) || Controls.IsKeyPressed(ConsoleKey.S))
+            {
+                cameraY += (int)((targetCameraY - cameraY) * followSpeed);
+            }
+
+            // Плавный обгон камеры при длительном движении в одном направлении
+            if (Controls.IsKeyPressed(ConsoleKey.W))
+            {
+                cameraY -= (int)(overtakeSpeed * consoleHeight);
+            }
+            else if (Controls.IsKeyPressed(ConsoleKey.S))
+            {
+                cameraY += (int)(overtakeSpeed * consoleHeight);
+            }
+
+            // Ограничение позиции камеры в пределах игрового поля
+            cameraX = Math.Max(0, Math.Min(cameraX, Global.defaultWidth));
+            cameraY = Math.Max(0, Math.Min(cameraY, Global.defaultHeight - consoleHeight - 1));
         }
 
-        // Плавный обгон камеры при длительном движении в одном направлении
-        if (Controls.IsKeyPressed(ConsoleKey.A))
-        {
-            cameraX -= (int)(overtakeSpeed * consoleWidth);
-        }
-        else if (Controls.IsKeyPressed(ConsoleKey.D))
-        {
-            cameraX += (int)(overtakeSpeed * consoleWidth);
-        }
 
-        // Ограничение позиции камеры в пределах игрового поля
-        cameraX = Math.Max(0, Math.Min(cameraX, Global.defaultWidth));
-        cameraY = Math.Max(0, Math.Min(cameraY, Global.defaultHeight));
-    }
 
-    static char previousCameraMode = 'B'; // 'B' для базового режима, 'A' для продвинутого режима
+
+        static char previousCameraMode = 'B'; // 'B' для базового режима, 'A' для продвинутого режима
     static int StatM = 0;
     static void UpdateHybridModeCamera(Hero player, int consoleWidth, int consoleHeight)
     {
-            if (player == null)
-            {
-               return;
-            }
-            
+        if (player == null)
+        {
+            return;
+        }
 
         // Проверка на отсутствие движения
-        if (!isMoving && (DateTime.Now - lastMovementTime).TotalSeconds >= 5)
+        if (!isMoving && (DateTime.Now - lastMovementTime).TotalSeconds >= 3)
         {
-                StatM += 1;
-                return;
-        }else { StatM = 0; }
+            previousCameraMode = 'A';
+            UpdateAdvancedCamera(consoleWidth, consoleHeight);
+            return;
+        }
 
-            int triggerThresholdX = consoleWidth / 4; // Порог для реакции камеры по горизонтали ближе к середине
+        int triggerThresholdX = consoleWidth / 4; // Порог для реакции камеры по горизонтали ближе к середине
         int borderThreshold = 50; // Порог для границы карты
 
         // Ограничение позиции камеры в пределах игрового поля
         cameraX = Math.Max(0, Math.Min(cameraX, Global.defaultWidth));
-        cameraY = Math.Max(0, Math.Min(cameraY, Global.defaultHeight - consoleHeight-StatM));
+        cameraY = Math.Max(0, Math.Min(cameraY, Global.defaultHeight - consoleHeight - (StatM * 2)));
 
         // Если персонаж рядом с границей карты, используем только Basic режим
         if (cameraX < borderThreshold || cameraX > Global.defaultWidth - consoleWidth - borderThreshold)
@@ -1005,6 +1020,7 @@ namespace Game_Curs_Prog
             }
         }
     }
+
 
     static void SendData(string message)
         {
